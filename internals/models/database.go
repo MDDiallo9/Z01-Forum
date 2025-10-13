@@ -11,30 +11,40 @@ import (
 var DB *sql.DB
 
 func InitDB() (*sql.DB, error) {
-	var err error
-	DB, err = sql.Open("sqlite3", "./forum.db")
+	dbFile := "./forum.db"
+	// Check if the database file exists
+	_, err := os.Stat(dbFile)
+	needsInit := os.IsNotExist(err)
+
+	DB, err = sql.Open("sqlite3", dbFile)
 	if err != nil {
 		log.Fatal("Failed to open database:", err)
+		return nil, err
 	}
 
-	// Then execute data.sql to add sample data (optional)
-	if _, err := os.Stat("schema.sql"); err == nil {
-		log.Println("Adding sample data...")
-		data, err := os.ReadFile("schema.sql")
+	if needsInit {
+		log.Println("Database file not found, creating and initializing schema...")
+		// Read and execute the schema to create tables
+		schemaPath := "migrations/schema.sql"
+		schema, err := os.ReadFile(schemaPath)
 		if err != nil {
-			log.Println("Warning: Failed to read schema.sql:", err)
-			return DB, nil
+			log.Printf("FATAL: Could not read schema file to initialize database: %v", err)
+			return nil, err
 		}
 
-		_, err = DB.Exec(string(data))
+		_, err = DB.Exec(string(schema))
 		if err != nil {
-			log.Println("Warning: Failed to execute data.sql:", err)
-			log.Println("This might be normal if data already exists")
-			return DB, nil
+			log.Printf("FATAL: Failed to execute schema.sql: %v", err)
+			return nil, err
 		}
-		log.Println("Sample data added successfully")
+		log.Println("Database initialized successfully.")
 	} else {
-		log.Println("No data.sql found, skipping sample data")
+		log.Println("Existing database found.")
 	}
+
+	if _, err := DB.Exec("PRAGMA foreign_keys = ON;"); err != nil {
+		log.Printf("Warning: Could not enable foreign key constraints: %v", err)
+	}
+
 	return DB, nil
 }
