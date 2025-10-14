@@ -9,7 +9,11 @@ type Application struct {
 	ErrorLog *log.Logger
 	InfoLog *log.Logger
 	Users *models.UsersModel
-	
+	TemplateData  TemplateData
+}
+
+type TemplateData struct {
+	Form any
 }
 
 func NewApplication(info, errLog *log.Logger, users *models.UsersModel) *Application {

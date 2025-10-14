@@ -3,8 +3,15 @@ package handlers
 import (
 	"forum/internal/app"
 	"net/http"
-	"fmt"
 )
+
+type userRegistrationForm struct {
+	Username    string
+	Password    string
+	Email       string
+	FieldErrors map[string]string
+	app.Validator
+}
 
 func Register(f *app.Application) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -15,17 +22,33 @@ func Register(f *app.Application) http.HandlerFunc {
 			return
 		}
 
-		username := r.PostForm.Get("username")
-		email := r.PostForm.Get("email")
-		password := r.PostForm.Get("password")
+		form := &userRegistrationForm{}
+		form.Username = r.PostForm.Get("username")
+		form.Email = r.PostForm.Get("email")
+		form.Password = r.PostForm.Get("password")
+		confirmPassword := r.PostForm.Get("confirm_password")
 
-		fmt.Println(username,email)
+		// Checking form fields
+		form.CheckField(app.NotBlank(form.Username), "username", "This field cannot be blank")
+		form.CheckField(app.MaxChars(form.Username,10), "username", "Username too long")
+		form.CheckField(app.NotBlank(form.Email), "email", "This field cannot be blank")
+		form.CheckField(app.ValidEmail(form.Email),"email","Invalid Email format")
+		form.CheckField(app.NotBlank(form.Password), "password", "This field cannot be blank")
+		form.CheckField(app.MinChars(form.Password,6),"password","Minimum 8 characters")
+		form.CheckField(app.IsIdentical(form.Password,confirmPassword),"password","Passwords aren't identical")
+		
 
-		// TODO: Add validation for the form fields.
+		if !form.Valid() {
+			form.FieldErrors = form.Validator.FieldErrors
+			data := &app.TemplateData{Form: form}
+			render(w, r, f, "register.html", data)
+			return
+		}
 
-		// TODO: Add real avatar support. 
-		uuid, err := f.Users.Register(username, email, password, "default-avatar.jpg", 1)
+		// TODO: Add real avatar support.
+		uuid, err := f.Users.Register(form.Username, form.Email, form.Password, "default-avatar.jpg", 1)
 		if err != nil {
+			// This could be a duplicate username/email. We should handle that more gracefully.
 			f.ErrorLog.Printf("User registration failed: %v", err)
 			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 			return

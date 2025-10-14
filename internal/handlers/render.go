@@ -9,7 +9,7 @@ import (
 	"net/http"
 )
 
-func render(w http.ResponseWriter, r *http.Request, f *app.Application, page string) {
+func render(w http.ResponseWriter, r *http.Request, f *app.Application, page string, data ...*app.TemplateData) {
 	files := []string{
 		fmt.Sprintf("./ui/templates/pages/%s", page),
 		"./ui/templates/layouts/base.layout.html",
@@ -23,7 +23,14 @@ func render(w http.ResponseWriter, r *http.Request, f *app.Application, page str
 		return
 	}
 
-	err = ts.ExecuteTemplate(w, "base", nil)
+	var td *app.TemplateData
+	if len(data) > 0 {
+		td = data[0]
+	} else {
+		td = &app.TemplateData{}
+	}
+
+	err = ts.ExecuteTemplate(w, "base", td)
 	if err != nil {
 		f.ErrorLog.Println(err.Error())
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
