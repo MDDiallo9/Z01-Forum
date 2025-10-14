@@ -13,6 +13,7 @@ func render(w http.ResponseWriter, r *http.Request, f *app.Application, page str
 	files := []string{
 		fmt.Sprintf("./ui/templates/pages/%s", page),
 		"./ui/templates/layouts/base.layout.html",
+		"./ui/templates/layouts/nav.layout.html",
 	}
 
 	ts, err := template.ParseFiles(files...)
