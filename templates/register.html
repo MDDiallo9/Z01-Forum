@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Forum register</title>
+</head>
+<body>
+    <header>
+        <h1>Forum</h1>
+        <nav>
+            <a href="/">Home</a>
+            <a href="/posts">Posts</a>
+            <a href="/categories"></a>
+            <a href="/login">Login</a>
+            <a href="/register">Register</a>
+        </nav>
+    </header>
+    <h1>Register</h1>
+    <form method="POST" action="/Register">
+        <label for="username">Username:</label>
+        <input type="text" id="username" name="username" required><br>
+        <label for="email">Email</label>
+        <input type="email" id="email" name="email" required><br>
+        <label for="password">Password:</label>
+        <input type="password" id="password" name="password" required><br>
+        <label for="co"></label>onfirm Password:</label>
+        <input type="password" id="confirm_password" name="confirm_password" required><br>
+        <button type="submit">Register</button>
+        <br><br>
+        already have an account? <a href="/login">Login here</a>.
+        sign up with google <a href="/auth/google">here</a>.
+        sign up with github <a href="/auth/github">here</a>.
+        sign up with apple <a href="/auth/apple">here</a>.
+    </form>
+    <div class="content">
+        <h2>About Us</h2>
+        <p>Lorem ipsum dolor sit amet consectetur adipisicing elit. 
+        Voluptates culpa amet ratione quia? Nostrum, mollitia labore veritatis quas amet expedita laudantium 
+        a perspiciatis, sapiente aliquid, repellat asperiores molestiae adipisci est.</p>
+    </div>   
+    <footer>
+        <h1>Forum</h1>
+        <nav>
+          <ul>
+            <h3>Contact</h3>
+            123 Forum St, City, Country<br>
+            Email:
+            phone: +123 456 7890<br>
+
+            <h3>Follow Us</h3>
+            <a href="#">LinkedIn</a><br>
+            <a href="#">GitHub</a><br>
+            <a href="#">Gitea</a><br>
+
+            <h3>Authors</h3>
+            <a href="#">Tyler chen</a><br>
+            <a href="#">Yongcheng Lin</a><br>
+            <a href="#">Chenxi Wang</a><br>
+            <a href="#">Yuxuan Li</a><br>
+          </ul>
+        </nav>
+        copyright &copy; 2024 Forum. All rights reserved.
+    </footer>
+    </body>
+</html>
