@@ -94,6 +94,7 @@ main {
     border-top: none;
     max-width: fit-content;
     position: relative;
+    background-color: transparent;
 }
 
 main::before {
@@ -124,11 +125,14 @@ main::before {
 /* Image area on the right side of login */
 main::after {
     content: '';
-    background-image: url('/static/images/forum-hero.jpg'); /* Add your image path here */
-    background-size: cover;
+    background-image: url('../images/forum.png');
+    background-size:contain;
     background-position: center;
     background-repeat: no-repeat;
     min-height: calc(100vh - 80px);
+    width: 600px;
+    height: 20px;
+    margin-top: -60px;
 }
 
 .login-container h1 {
