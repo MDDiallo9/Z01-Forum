@@ -1,3 +1,11 @@
 package app
 
-// Thin wrapper around log with request ID helper. log format
+import (
+	"log"
+	"os"
+)
+
+var (
+    InfoLog  = log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime)
+    ErrorLog = log.New(os.Stdout, "ERROR\t", log.Ldate|log.Ltime)
+)

@@ -1,10 +1,13 @@
 package main
 
 import (
-	"forum/internals/models"
+	"forum/internal/app"
+	"forum/internal/handlers"
+	"forum/internal/models"
 	"log"
-	"net/http"
+	"os"
 )
+
 
 func main() {
 	// Initialize DB and schema
@@ -14,29 +17,22 @@ func main() {
 	}
 	defer db.Close()
 
-	log.Println("✓ Database initialized successfully!")
 
-	// Create a new ServeMux (router)
-	mux := http.NewServeMux()
+	info := log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime)
+    errLog := log.New(os.Stderr, "ERROR\t", log.Ldate|log.Ltime)
+    usersModel := &models.UsersModel{DB: db}
 
-	// Static files - serves CSS, JS, images from ./static directory
-	fileServer := http.FileServer(http.Dir("./static"))
-	mux.Handle("/static/", http.StripPrefix("/static", fileServer))
+	forum := app.NewApplication(info,errLog,usersModel)
+	mux := handlers.Routes(forum)
+	srv := app.Server(forum,mux)
 
-	// Routes
-	mux.HandleFunc("/", home)
 
 	// Server configuration
-	port := ":8080"
-	log.Printf("Starting Forum server on http://localhost%s\n", port)
+	
+	log.Printf("Starting Forum server on http://localhost%s\n", srv.Addr)
 
-	// Start server (note: using different variable name to avoid redeclaration)
-	serverErr := http.ListenAndServe(port, mux)
-	if serverErr != nil {
-		log.Fatal("Server failed to start:", serverErr)
-	}
+	err = srv.ListenAndServe()
+	app.ErrorLog.Fatal(err)
 }
 
-func home(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("Welcome to the Forum!"))
-}
+
