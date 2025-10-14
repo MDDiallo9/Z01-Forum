@@ -4,6 +4,8 @@ import (
 	"errors"
 	"forum/internal/app"
 	"forum/internal/models"
+	"log"
+
 	"net/http"
 )
 
@@ -11,13 +13,14 @@ type userRegistrationForm struct {
 	Username    string
 	Password    string
 	Email       string
+	Avatar      string
 	FieldErrors map[string]string
 	app.Validator
 }
 
 func Register(f *app.Application) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		err := r.ParseForm()
+		err := r.ParseMultipartForm(10 << 20)
 		if err != nil {
 			f.ErrorLog.Printf("Form parsing error: %v", err)
 			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
@@ -46,14 +49,38 @@ func Register(f *app.Application) http.HandlerFunc {
 			return
 		}
 
-		// TODO: Add real avatar support.
-		uuid, err := f.Users.Register(form.Username, form.Email, form.Password, "default-avatar.jpg", 1)
+		// Avatar Upload
+		
+		file, header, err := r.FormFile("avatar")
+		if err != nil {
+            // no file uploaded -> use default avatar
+            if err == http.ErrMissingFile {
+                form.Avatar = "default-avatar.jpg"
+            } else {
+                // real error reading the uploaded file
+                f.ErrorLog.Printf("error reading avatar file: %v", err)
+                form.Avatar = "default-avatar.jpg"
+            }
+        } else {
+            defer file.Close()
+            // user left the file input empty => filename may be empty
+            if header == nil || header.Filename == "" {
+                form.Avatar = "default-avatar.jpg"
+            } else {
+                form.Avatar, err = app.UploadImage(file, *header, "avatars")
+                if err != nil {
+                    log.Println(err)
+                    form.Avatar = "default-avatar.jpg"
+                }
+            }
+        }
+
+		uuid, err := f.Users.Register(form.Username, form.Email, form.Password, form.Avatar, 0)
 		if err != nil {
 			if errors.Is(err, models.ErrDuplicateRecord) {
 				// TODO Could add a box for this error instead of sticking it to a form field
 				form.AddFieldError("email", "An account with this email or username already exists")
 				form.AddFieldError("username", "An account with this email or username already exists")
-
 				form.FieldErrors = form.Validator.FieldErrors
 				data := &app.TemplateData{Form: form}
 				render(w, r, f, "register.html", data)
@@ -64,6 +91,8 @@ func Register(f *app.Application) http.HandlerFunc {
 			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 			return
 		}
+
+		// TODO Session Management and Cookie
 
 		f.InfoLog.Printf("New user registered with UUID: %s", uuid)
 		w.Write([]byte("Registration successful!"))
