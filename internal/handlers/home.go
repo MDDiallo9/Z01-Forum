@@ -25,3 +25,9 @@ func RegisterPage(f *app.Application) http.HandlerFunc {
 		render(w, r, f, "register.html")
 	}
 }
+
+func LoginPage(f *app.Application) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		render(w, r, f, "login.html")
+	}
+}

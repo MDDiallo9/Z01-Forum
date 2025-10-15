@@ -12,9 +12,10 @@ func Routes(f *app.Application) *http.ServeMux {
 	fileServer := http.FileServer(http.Dir("./ui/templates/static"))
 	mux.Handle("/static/", http.StripPrefix("/static", fileServer))
 
-	
 	mux.HandleFunc("GET /{$}", Home(f))
 	mux.HandleFunc("GET /register", RegisterPage(f))
 	mux.HandleFunc("POST /register", Register(f))
+	mux.HandleFunc("GET /login", LoginPage(f))
+	mux.HandleFunc("POST /login", Login(f))
 	return mux
 }
