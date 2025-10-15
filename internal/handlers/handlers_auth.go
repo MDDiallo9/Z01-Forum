@@ -95,6 +95,6 @@ func Register(f *app.Application) http.HandlerFunc {
 		// TODO Session Management and Cookie
 
 		f.InfoLog.Printf("New user registered with UUID: %s", uuid)
-		w.Write([]byte("Post successful!"))
+		w.Write([]byte("Registration successful!"))
 	}
 }

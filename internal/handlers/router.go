@@ -17,5 +17,7 @@ func Routes(f *app.Application) *http.ServeMux {
 	mux.HandleFunc("GET /register", RegisterPage(f))
 	mux.HandleFunc("POST /register", Register(f))
 	mux.HandleFunc("POST /post", CreatePost(f))
+	mux.HandleFunc("DELETE /post/delete/{id}",DeletePost(f))
+	mux.HandleFunc("PUT /post/update/{id}",UpdatePost(f))
 	return mux
 }
