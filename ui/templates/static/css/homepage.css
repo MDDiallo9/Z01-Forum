@@ -1,0 +1,478 @@
+/* ==================== RESET & BASE STYLES ==================== */
+* {
+    padding: 0;
+    margin: 0;
+    box-sizing: border-box;
+}
+
+body {
+    background: linear-gradient(#000000 40%, #0a2438 50%);
+    color: white;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+    overflow-x: hidden;
+    min-height: 100vh;
+}
+
+/* ==================== HEADER STYLES ==================== */
+header {
+    display: flex;
+    justify-content: space-between;
+    padding: 2px 20px;
+    align-items: center;
+    position: fixed;
+    width: 100%;
+    top: 0;
+    z-index: 0;
+    background: linear-gradient(90deg, #0a2438 0%, #1a5a7f 190%);
+}
+
+header h1 {
+    font-size: 5.2rem;
+    font-weight: 400;
+    color: white;
+    font-style: italic;
+    letter-spacing: 0.5px;
+    font-family: 'Brush Script MT', cursive;
+    margin-left: 50px;
+}
+
+/* ==================== NAVIGATION STYLES ==================== */
+nav {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+}
+
+nav a {
+    color: white;
+    text-decoration: none;
+    font-weight: 400;
+    font-size: 0.95rem;
+    transition: opacity 0.2s ease;
+}
+
+nav a:not(.login-nav):not(.register-nav):hover {
+    opacity: 0.8;
+}
+
+nav a.login-nav {
+    padding: 10px 10px;
+    border-radius: 30px;
+    border: 2px solid white;
+    background: transparent;
+    transition: all 0.2s ease;
+    font-weight: 500;
+}
+
+nav a.register-nav {
+    padding: 10px 10px;
+    border-radius: 30px;
+    border: none;
+    background: white;
+    color: #F7944a;
+    transition: all 0.2s ease;
+    font-weight: 500;
+}
+
+nav a.login-nav:hover {
+    color: white;
+    background: #0a2438;
+}
+
+nav a.register-nav:hover {
+    background: #0a2438;
+    color: white;
+}
+
+/* ==================== MAIN CONTENT STYLES ==================== */
+main {
+    margin-top: 160px;
+    padding: 0;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    min-height: calc(100vh - 120px);
+    border-top: none;
+    width: 100%;
+    position: relative;
+}
+
+/* main::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 60px;
+    right: 60px;
+    height: 1px;
+    background: rgba(255, 255, 255, 0.2);
+    max-width: 1200px;
+    margin: 0 auto;
+} */
+
+#main-container {
+    width: 100%;
+    height: 100%;
+
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+}
+
+
+#top-post {
+    background-color: green;
+    width: 100%;
+    height: 100%;
+}
+
+/* Image area on the right side */
+/* main::after {
+    content: '';
+    background-color: green;
+    background-image: url('../images/forum.png');
+    background-size: contain;
+    background-position: center;
+    background-repeat: no-repeat;
+    min-height: calc(100vh - 80px);
+    width: 600px;
+    height: 20px;
+    margin-top: -60px;
+    margin-left: 50px;
+} */
+
+
+
+/* ==================== FORM STYLES ==================== */
+.error {
+    color: red
+}
+
+form {
+    display: flex;
+    flex-direction: column;
+}
+
+label {
+    color: #e9eef0;
+    font-weight: 400;
+    margin-bottom: 10px;
+    font-size: 0.85rem;
+    letter-spacing: 0.3px;
+}
+
+input[type="text"],
+input[type="email"],
+input[type="password"] {
+    background: transparent;
+    border: 1.5px solid #333;
+    border-radius: 8px;
+    padding: 14px 18px;
+    color: white;
+    font-size: 0.95rem;
+    margin-bottom: 15px;
+    transition: border-color 0.3s ease;
+}
+
+input[type="text"]::placeholder,
+input[type="email"]::placeholder,
+input[type="password"]::placeholder {
+    color: #666;
+    font-weight: 300;
+}
+
+input[type="text"]:focus,
+input[type="email"]:focus,
+input[type="password"]:focus {
+    outline: none;
+    border-color: #555;
+}
+
+button[type="submit"] {
+    background: linear-gradient(90deg, #5a6b79 0%, #9cBBCB 100%);
+    color: white;
+    border: none;
+    padding: 16px;
+    border-radius: 8px;
+    font-size: 1.05rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin-top: 5px;
+    margin-bottom: 20px;
+    letter-spacing: 0.3px;
+}
+
+button[type="submit"]:hover {
+    opacity: 0.95;
+    transform: translateY(-1px);
+}
+
+button[type="submit"]:active {
+    transform: translateY(0);
+}
+
+/* ==================== FORM LINKS STYLES ==================== */
+.form-links {
+    margin-top: 0;
+    margin-bottom: 30px;
+    color: #888;
+    font-size: 0.85rem;
+    font-weight: 300;
+}
+
+.form-links p {
+    margin-bottom: 8px;
+    text-align: left;
+}
+
+.form-links a {
+    color: #fab888;
+    text-decoration: none;
+    font-weight: 400;
+    transition: color 0.2s ease;
+}
+
+.form-links a:hover {
+    color: #F7944a;
+}
+
+/* ==================== SOCIAL REGISTER STYLES ==================== */
+.social-register {
+    margin-top: 0;
+    padding-top: 0;
+    border-top: none;
+}
+
+.social-register>p {
+    text-align: left;
+    color: #888;
+    margin-bottom: 15px;
+    font-size: 0.85rem;
+    font-weight: 300;
+}
+
+.social-buttons {
+    display: flex;
+    flex-direction: row;
+    gap: 12px;
+    justify-content: space-between;
+}
+
+.social-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    padding: 10px;
+    border-radius: 50px;
+    border: 1px solid #ddd;
+    background: white;
+    color: #000;
+    text-decoration: none;
+    transition: all 0.2s ease;
+    font-weight: 500;
+    font-size: 0.88rem;
+    flex: 1;
+    min-width: 0;
+    white-space: nowrap;
+}
+
+.social-btn:hover {
+    background: #f8f8f8;
+    border-color: #ccc;
+    transform: translateY(-1px);
+}
+
+.social-btn svg {
+    flex-shrink: 0;
+    width: 20px;
+    height: 20px;
+}
+
+/* ==================== CONTENT SECTION STYLES ==================== */
+.content {
+    padding: 60px 60px;
+    display: block;
+    background: transparent;
+    margin-top: -25px;
+    min-height: 200px;
+}
+
+.content h2 {
+    color: white;
+    font-size: 2.2rem;
+    margin-bottom: 10px;
+    font-weight: 600;
+    text-align: center;
+}
+
+.content p {
+    color: #999;
+    line-height: 1.8;
+    font-size: 1.05rem;
+    max-width: 1200px;
+    margin: 0 auto;
+    text-align: center;
+}
+
+/* ==================== FOOTER STYLES ==================== */
+footer {
+    background: linear-gradient(100deg, #0a2438, #1a5a7f 300%);
+    padding: 5px 60px;
+    margin-top: 0;
+}
+
+footer h1 {
+    font-size: 4.2rem;
+    margin: 0 auto 0px;
+    font-style: italic;
+    font-family: 'Brush Script MT', cursive;
+    font-weight: 400;
+}
+
+footer h3 {
+    color: white;
+    margin-top: 5px;
+    margin-bottom: 12px;
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+footer a {
+    color: white;
+    text-decoration: none;
+    transition: opacity 0.2s ease;
+    display: inline-block;
+    font-weight: 300;
+    font-size: 0.95rem;
+}
+
+footer a:hover {
+    opacity: 0.8;
+}
+
+footer ul {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 15px;
+    list-style: none;
+    padding: 0;
+    margin: 20px 0 0 0;
+}
+
+footer nav {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(90px, 2fr));
+    gap: 15px;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.copyright {
+    text-align: center;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
+    color: white;
+    font-size: 0.85rem;
+    font-weight: 300;
+}
+
+/* ==================== RESPONSIVE STYLES ==================== */
+@media (max-width: 1024px) {
+    .register-container {
+        padding: 60px 50px;
+    }
+}
+
+@media (max-width: 768px) {
+    header {
+        padding: 18px 30px;
+        flex-direction: column;
+        gap: 18px;
+    }
+
+    header h1 {
+        margin-left: 0;
+    }
+
+    nav {
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 12px;
+    }
+
+    main {
+        grid-template-columns: 1fr;
+        margin-top: 160px;
+    }
+
+    main::after {
+        display: none;
+    }
+
+    .image-area {
+        display: none;
+    }
+
+    .register-container {
+        padding: 50px 30px;
+        min-height: auto;
+        max-width: 100%;
+    }
+
+    .register-container h1 {
+        font-size: 2.2rem;
+    }
+
+    .content {
+        padding: 40px 30px;
+    }
+
+    .content {
+        padding: 40px 30px;
+    }
+
+    footer {
+        padding: 40px 30px;
+    }
+
+    .social-buttons {
+        flex-direction: column;
+        gap: 10px;
+    }
+}
+
+@media (max-width: 480px) {
+    header h1 {
+        font-size: 1.8rem;
+    }
+
+    nav a {
+        font-size: 0.85rem;
+    }
+
+    nav a.login-nav,
+    nav a.register-nav {
+        padding: 9px 22px;
+    }
+
+    .register-container {
+        padding: 40px 20px;
+    }
+
+    .register-container h1 {
+        font-size: 1.9rem;
+    }
+
+    input[type="text"],
+    input[type="email"],
+    input[type="password"] {
+        padding: 12px 15px;
+        font-size: 0.9rem;
+    }
+
+    button[type="submit"] {
+        padding: 14px;
+        font-size: 0.95rem;
+    }
+}
