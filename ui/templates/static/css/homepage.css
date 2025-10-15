@@ -123,11 +123,28 @@ main {
     height: 100%;
 }
 
-#forum-pages {
+/* Topics area*/
+#topics {
     background-color: rgba(0, 128, 0, 0.252);
     width: 30%;
     height: 100%;
 }
+
+#topics div {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+#topics div a {
+    color: white;
+    text-decoration: none;
+    font-weight: 400;
+    font-size: 0.95rem;
+    transition: opacity 0.2s ease;
+}
+
 
 /* Image area on the right side */
 /* main::after {
