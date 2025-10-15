@@ -16,5 +16,6 @@ func Routes(f *app.Application) *http.ServeMux {
 	mux.HandleFunc("GET /{$}", Home(f))
 	mux.HandleFunc("GET /register", RegisterPage(f))
 	mux.HandleFunc("POST /register", Register(f))
+	mux.HandleFunc("POST /post", CreatePost(f))
 	return mux
 }

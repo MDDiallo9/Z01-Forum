@@ -21,8 +21,9 @@ func main() {
 	info := log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime)
     errLog := log.New(os.Stderr, "ERROR\t", log.Ldate|log.Ltime)
     usersModel := &models.UsersModel{DB: db}
+	postsModel := &models.PostsModel{DB: db}
 
-	forum := app.NewApplication(info,errLog,usersModel)
+	forum := app.NewApplication(info,errLog,usersModel,postsModel)
 	mux := handlers.Routes(forum)
 	srv := app.Server(forum,mux)
 
