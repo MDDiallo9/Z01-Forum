@@ -2,6 +2,8 @@ package models
 
 import (
 	"database/sql"
+	"errors"
+
 	/* "errors"
 	"time" */
 	"github.com/google/uuid"
@@ -39,4 +41,19 @@ func (m *UsersModel) Register(username, email, password, avatar string, role int
 
 	// Returned ID is int64 type , we convert it before returning
 	return UUID, nil
+}
+
+func (m *UsersModel) Authenticate(emailOrUsername, password string) (string, error) {
+	var id string
+	var hashedPassword string
+	statement := `SELECT id, password FROM users WHERE email = ? OR username = ?`
+	row := m.DB.QueryRow(statement, emailOrUsername, emailOrUsername)
+	err := row.Scan(&id, &hashedPassword)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return "", errors.New("invalid credentials")
+		}
+		return "", err
+	}
+	return id, nil
 }
