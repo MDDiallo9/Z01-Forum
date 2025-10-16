@@ -1,22 +1,6 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Forum Login</title>
-    <link rel="stylesheet" href="../static/css/login.css">
-</head>
-<body>
-    <header>
-        <h1>Forum</h1>
-        <nav>
-            <a href="/">Home</a>
-            <a href="/posts">Posts</a>
-            <a href="/categories">Categories</a>
-            <a class="login-nav" href="/login">Login</a>
-            <a class="register-nav" href="/register">Register</a>
-        </nav>
-    </header>
+{{template "base" .}}
+
+{{define "main"}}
 
     <main>
         <div class="login-container">
@@ -104,5 +88,4 @@
             Copyright &copy; 2025 Forum. All rights reserved.
         </div>
     </footer>
-</body>
-</html>
+{{ end }}
