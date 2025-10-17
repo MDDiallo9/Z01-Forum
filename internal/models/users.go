@@ -3,6 +3,7 @@ package models
 import (
 	"database/sql"
 	"errors"
+	"strings"
 
 	/* "errors"
 	"time" */
@@ -49,6 +50,8 @@ func (m *UsersModel) Register(username, email, password, avatar string, role int
 }
 
 func (m *UsersModel) Authenticate(emailOrUsername, password string) (string, error) {
+	emailOrUsername = strings.TrimSpace(emailOrUsername)
+
 	var id string
 	var hashedPassword string
 	statement := `SELECT id, password FROM users WHERE email = ? OR username = ?`
@@ -60,5 +63,15 @@ func (m *UsersModel) Authenticate(emailOrUsername, password string) (string, err
 		}
 		return "", err
 	}
+
+	// Compare provided password if it matches the hashed password
+	err = bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(password))
+	if err != nil {
+		if errors.Is(err, bcrypt.ErrMismatchedHashAndPassword) {
+			return "", errors.New("invalid credentials")
+		}
+		return "", err
+	}
+
 	return id, nil
 }

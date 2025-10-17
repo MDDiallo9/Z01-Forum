@@ -108,7 +108,7 @@ func Login(f *app.Application) http.HandlerFunc {
 			return
 		}
 
-		emailOrUsername := r.PostForm.Get("emailORUsername")
+		emailOrUsername := r.PostForm.Get("username")
 		password := r.PostForm.Get("password")
 
 		// TODO: Add validation for the form fields.
