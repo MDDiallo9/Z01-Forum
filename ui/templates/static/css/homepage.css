@@ -117,10 +117,40 @@ main {
     align-items: center;
 }
 
+/* Top post area*/
 #top-post {
     background-color: green;
     width: 100%;
     height: 100%;
+    display: flex;
+    align-items: center;
+    /* justify-content: center; */
+    flex-direction: column;
+}
+
+#upper-top-post {
+    width: 95%;
+    height: 10%;
+    background-color: #8b7474;
+}
+
+#lower-top-post {
+    width: 95%;
+    height: 85%;
+    background-color: #dad0d0;
+    overflow-y: scroll;
+    /* active le scroll vertical */
+    overflow-x: hidden;
+    /* désactive le scroll horizontal */
+    display: flex;
+
+}
+
+.post {
+    width: 75%;
+    height: 90%;
+    background-color: #382121;
+    border: 1px solid;
 }
 
 /* Topics area*/
