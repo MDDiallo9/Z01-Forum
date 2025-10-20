@@ -133,13 +133,24 @@ main {
 #create-post {
     width: 100%;
     height: 20%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+}
+
+.new-post-button {
+    width: 50%;
+    height: 40%;
+    border-radius: 20px;
+    font-size: 1rem;
 }
 
 #topics {
     background-color: rgba(0, 128, 0, 0.252);
     width: 100%;
     height: 100%;
-    gap: 5%;
+    /* gap: 5%; */
     display: flex;
     align-items: center;
     /* justify-content: center; */
@@ -151,6 +162,8 @@ main {
     flex-direction: column;
     align-items: center;
     justify-content: center;
+    gap: 7%;
+    height: 35%;
 }
 
 #topics div a {
