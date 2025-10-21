@@ -108,10 +108,9 @@ func Login(f *app.Application) http.HandlerFunc {
 			return
 		}
 
+		// Handle POST
 		emailOrUsername := r.PostForm.Get("username")
 		password := r.PostForm.Get("password")
-
-		// TODO: Add validation for the form fields.
 
 		id, err := f.Users.Authenticate(emailOrUsername, password)
 		if err != nil {
@@ -120,9 +119,18 @@ func Login(f *app.Application) http.HandlerFunc {
 			return
 		}
 
-		// TODO: Create a session for the user.
+		// Create a session for the user.
+		err = f.Sessions.CreateSession(w, r, id)
+		if err != nil {
+			f.ErrorLog.Printf("Session creation failed: %v", err)
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			return
+		}
 
 		f.InfoLog.Printf("User with ID %s logged in successfully", id)
 		w.Write([]byte("Login successful!"))
+
+		// Redirect to dashboard
+		http.Redirect(w, r, "/dashboard", http.StatusSeeOther)
 	}
 }
