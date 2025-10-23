@@ -23,6 +23,9 @@ func main() {
 
 	// Initialize models
 	usersModel := &models.UsersModel{DB: db}
+	errLog := log.New(os.Stderr, "ERROR\t", log.Ldate|log.Ltime)
+	usersModel := &models.UsersModel{DB: db}
+	postsModel := &models.PostsModel{DB: db}
 
 	// Initialize services(SessionManager)
 	sessionManager := &services.SessionManager{
@@ -33,6 +36,7 @@ func main() {
 	}
 
 	forum := app.NewApplication(info, errLog, usersModel, sessionManager)
+	forum := app.NewApplication(info, errLog, usersModel, postsModel)
 	mux := handlers.Routes(forum)
 	srv := app.Server(forum, mux)
 
