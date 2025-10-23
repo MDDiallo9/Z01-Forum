@@ -9,9 +9,7 @@ CREATE TABLE IF NOT EXISTS "users" (
     "email" VARCHAR NOT NULL UNIQUE,
     "password" VARCHAR NOT NULL,
     "avatar" VARCHAR,
-    "role" INTEGER NOT NULL DEFAULT 0,
-    "session_id" VARCHAR UNIQUE,
-    "session_created_at" TIMESTAMP
+    "role" INTEGER NOT NULL DEFAULT 0
 );
 
 --------------------------------------------------
@@ -65,6 +63,16 @@ CREATE TABLE IF NOT EXISTS "reactions" (
     )
 );
 
+CREATE TABLE IF NOT EXISTS "sessions" (
+    "id" STRING NOT NULL PRIMARY KEY,
+    "user_id" TEXT NOT NULL,
+    "created_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "expires_at" TIMESTAMP NOT NULL,
+    "ip_address" TEXT,
+    "user_agent" TEXT,
+    FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE
+);
+
 
 CREATE UNIQUE INDEX IF NOT EXISTS "idx_unique_post_reaction"
 ON "reactions" ("user_id", "post_id")
@@ -73,3 +81,9 @@ WHERE "post_id" IS NOT NULL;
 CREATE UNIQUE INDEX IF NOT EXISTS "idx_unique_comment_reaction"
 ON "reactions" ("user_id", "comment_id")
 WHERE "comment_id" IS NOT NULL;
+
+CREATE UNIQUE INDEX IF NOT EXISTS "idx_session_user_id"
+ON "sessions" ("user_id")
+
+CREATE UNIQUE INDEX IF NOT EXISTS "idx_session_expires_at"
+ON "sessions" ("expires_at")
