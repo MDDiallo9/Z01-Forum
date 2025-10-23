@@ -37,7 +37,7 @@ func (sm *SessionManager) CreateSession(w http.ResponseWriter, r *http.Request, 
 
 	_, err = sm.DB.Exec(statement, sessionID, UserID, createdAt, expiresAt, ip, userAgent)
 	if err != nil {
-		return nil
+		return err
 	}
 
 	// Create cookies
