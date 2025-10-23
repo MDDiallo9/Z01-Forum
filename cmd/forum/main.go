@@ -18,11 +18,8 @@ func main() {
 	}
 	defer db.Close()
 
-	info := log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime)
-	errLog := log.New(os.Stderr, "ERROR\t", log.Ldate|log.Ltime)
-
 	// Initialize models
-	usersModel := &models.UsersModel{DB: db}
+	info := log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime)
 	errLog := log.New(os.Stderr, "ERROR\t", log.Ldate|log.Ltime)
 	usersModel := &models.UsersModel{DB: db}
 	postsModel := &models.PostsModel{DB: db}
@@ -35,8 +32,7 @@ func main() {
 		HardMax:    24 * time.Hour,
 	}
 
-	forum := app.NewApplication(info, errLog, usersModel, sessionManager)
-	forum := app.NewApplication(info, errLog, usersModel, postsModel)
+	forum := app.NewApplication(info, errLog, usersModel, postsModel, sessionManager)
 	mux := handlers.Routes(forum)
 	srv := app.Server(forum, mux)
 
