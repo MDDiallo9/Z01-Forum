@@ -7,16 +7,11 @@ import (
 )
 
 type Application struct {
-	ErrorLog *log.Logger
-	InfoLog *log.Logger
-	Users *models.UsersModel
-	Posts *models.PostsModel
-	Attachments *models.AttachmentsModel
-	TemplateData  TemplateData
-	ErrorLog     *log.Logger
 	InfoLog      *log.Logger
+	ErrorLog     *log.Logger
 	Users        *models.UsersModel
 	Posts        *models.PostsModel
+	Attachments  *models.AttachmentsModel
 	Sessions     *services.SessionManager
 	TemplateData TemplateData
 }
@@ -25,8 +20,20 @@ type TemplateData struct {
 	Form any
 }
 
-func NewApplication(info, errLog *log.Logger, users *models.UsersModel,posts *models.PostsModel,attachments *models.AttachmentsModel) *Application {
-    return &Application{InfoLog: info, ErrorLog: errLog, Users: users,Posts:posts,Attachments: attachments}
-func NewApplication(info, errLog *log.Logger, users *models.UsersModel, posts *models.PostsModel, sessions *services.SessionManager) *Application {
-	return &Application{InfoLog: info, ErrorLog: errLog, Users: users, Posts: posts, Sessions: sessions}
+func NewApplication(
+	info *log.Logger,
+	errLog *log.Logger,
+	users *models.UsersModel,
+	posts *models.PostsModel,
+	attachments *models.AttachmentsModel,
+	sessions *services.SessionManager,
+) *Application {
+	return &Application{
+		InfoLog:     info,
+		ErrorLog:    errLog,
+		Users:       users,
+		Posts:       posts,
+		Attachments: attachments,
+		Sessions:    sessions,
+	}
 }

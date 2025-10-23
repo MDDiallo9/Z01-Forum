@@ -16,12 +16,6 @@ func Routes(f *app.Application) *http.ServeMux {
 	mux.HandleFunc("GET /{$}", Home(f))
 	mux.HandleFunc("GET /register", RegisterPage(f))
 	mux.HandleFunc("POST /register", Register(f))
-	mux.HandleFunc("GET /post/create", CreatePostPage(f))
-	mux.HandleFunc("POST /post", CreatePost(f))
-	mux.HandleFunc("DELETE /post/delete/{id}", DeletePost(f))
-	mux.HandleFunc("PUT /post/update/{id}", UpdatePost(f))
-	mux.HandleFunc("DELETE /post/delete/{id}", DeletePost(f))
-	mux.HandleFunc("PUT /post/update/{id}", UpdatePost(f))
 	mux.HandleFunc("GET /login", LoginPage(f))
 	mux.HandleFunc("POST /login", Login(f))
 
@@ -31,6 +25,10 @@ func Routes(f *app.Application) *http.ServeMux {
 
 	// PROTECTED ROUTES ALL GO HERE FOLLOWING THE PATTERN
 	// Protected handler to test our sessions
+	mux.Handle("GET /post/create", auth(CreatePostPage(f)))
+	mux.Handle("POST /post", auth(CreatePost(f)))
+	mux.Handle("DELETE /post/delete/{id}", auth(DeletePost(f)))
+	mux.Handle("PUT /post/update/{id}", auth(UpdatePost(f)))
 	mux.Handle("GET /logout", auth(LogoutPopUp(f)))
 	mux.Handle("POST /logout", auth(Logout(f)))
 

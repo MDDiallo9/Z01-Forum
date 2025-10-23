@@ -25,7 +25,6 @@ func main() {
 	postsModel := &models.PostsModel{DB: db}
 	attachmentsModel := &models.AttachmentsModel{DB: db}
 
-	forum := app.NewApplication(info, errLog, usersModel, postsModel, attachmentsModel)
 	// Initialize services(SessionManager)
 	sessionManager := &services.SessionManager{
 		DB:         db,
@@ -34,7 +33,7 @@ func main() {
 		HardMax:    24 * time.Hour,
 	}
 
-	forum := app.NewApplication(info, errLog, usersModel, postsModel, sessionManager)
+	forum := app.NewApplication(info, errLog, usersModel, postsModel, attachmentsModel, sessionManager)
 	mux := handlers.Routes(forum)
 	srv := app.Server(forum, mux)
 
