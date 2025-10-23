@@ -46,7 +46,7 @@ CREATE TABLE IF NOT EXISTS "comments" (
     FOREIGN KEY ("post_id") REFERENCES "posts"("id") ON DELETE CASCADE
 );
 
-
+--------------------------------------------------
 
 CREATE TABLE IF NOT EXISTS "reactions" (
     "id" INTEGER NOT NULL PRIMARY KEY,
@@ -63,6 +63,8 @@ CREATE TABLE IF NOT EXISTS "reactions" (
     )
 );
 
+--------------------------------------------------
+
 CREATE TABLE IF NOT EXISTS "sessions" (
     "id" STRING NOT NULL PRIMARY KEY,
     "user_id" TEXT NOT NULL,
@@ -73,6 +75,7 @@ CREATE TABLE IF NOT EXISTS "sessions" (
     FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE
 );
 
+--------------------------------------------------
 
 CREATE UNIQUE INDEX IF NOT EXISTS "idx_unique_post_reaction"
 ON "reactions" ("user_id", "post_id")
@@ -83,7 +86,7 @@ ON "reactions" ("user_id", "comment_id")
 WHERE "comment_id" IS NOT NULL;
 
 CREATE UNIQUE INDEX IF NOT EXISTS "idx_session_user_id"
-ON "sessions" ("user_id")
+ON "sessions" ("user_id");
 
 CREATE UNIQUE INDEX IF NOT EXISTS "idx_session_expires_at"
-ON "sessions" ("expires_at")
+ON "sessions" ("expires_at");

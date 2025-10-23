@@ -4,8 +4,10 @@ import (
 	"forum/internal/app"
 	"forum/internal/handlers"
 	"forum/internal/models"
+	"forum/internal/services"
 	"log"
 	"os"
+	"time"
 )
 
 func main() {
@@ -18,9 +20,19 @@ func main() {
 
 	info := log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime)
 	errLog := log.New(os.Stderr, "ERROR\t", log.Ldate|log.Ltime)
+
+	// Initialize models
 	usersModel := &models.UsersModel{DB: db}
 
-	forum := app.NewApplication(info, errLog, usersModel)
+	// Initialize services(SessionManager)
+	sessionManager := &services.SessionManager{
+		DB:         db,
+		CookieName: "forum_session",
+		LifeTime:   1 * time.Hour,
+		HardMax:    24 * time.Hour,
+	}
+
+	forum := app.NewApplication(info, errLog, usersModel, sessionManager)
 	mux := handlers.Routes(forum)
 	srv := app.Server(forum, mux)
 

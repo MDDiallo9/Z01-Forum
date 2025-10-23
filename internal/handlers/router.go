@@ -22,8 +22,9 @@ func Routes(f *app.Application) *http.ServeMux {
 	// Then pass f.Sessions because it meets the SessionManager perequisites
 	// auth := middleware.AuthRequired(f.Sessions)
 
+	// PROTECTED ROUTES ALL GO HERE FOLLOWING THE PATTERN
 	// Protected handler to test our sessions
-	mux.HandleFunc("GET /session-test", SessionTest(f))
+	// mux.Handle("GET /dashboard", auth(Dashboard(f)))
 
 	return mux
 }

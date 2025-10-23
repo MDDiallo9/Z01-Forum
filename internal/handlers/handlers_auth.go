@@ -128,7 +128,7 @@ func Login(f *app.Application) http.HandlerFunc {
 		}
 
 		f.InfoLog.Printf("User with ID %s logged in successfully", id)
-		w.Write([]byte("Login successful!"))
+		// w.Write([]byte("Login successful!"))
 
 		// Redirect to dashboard
 		http.Redirect(w, r, "/dashboard", http.StatusSeeOther)

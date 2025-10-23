@@ -18,6 +18,6 @@ type TemplateData struct {
 	Form any
 }
 
-func NewApplication(info, errLog *log.Logger, users *models.UsersModel) *Application {
-	return &Application{InfoLog: info, ErrorLog: errLog, Users: users}
+func NewApplication(info, errLog *log.Logger, users *models.UsersModel, sessions *services.SessionManager) *Application {
+	return &Application{InfoLog: info, ErrorLog: errLog, Users: users, Sessions: sessions}
 }
