@@ -134,3 +134,15 @@ func Login(f *app.Application) http.HandlerFunc {
 		http.Redirect(w, r, "/dashboard", http.StatusSeeOther)
 	}
 }
+
+func Logout(f *app.Application) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		err := f.Sessions.DestroySession(w, r)
+		if err != nil {
+			// Even if destroying the session fails, we still redirect user away from the protected route
+			f.ErrorLog.Printf(err.Error())
+		}
+		// Redirect to the homepage after logout. Useer can peruse and chill there.
+		http.Redirect(w, r, "/", http.StatusSeeOther)
+	}
+}

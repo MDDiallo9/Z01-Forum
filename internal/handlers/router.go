@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"forum/internal/app"
+	"forum/internal/middleware"
 	"net/http"
 )
 
@@ -20,11 +21,12 @@ func Routes(f *app.Application) *http.ServeMux {
 
 	// Create an instance of the authentication middleware
 	// Then pass f.Sessions because it meets the SessionManager perequisites
-	// auth := middleware.AuthRequired(f.Sessions)
+	auth := middleware.AuthRequired(f.Sessions)
 
 	// PROTECTED ROUTES ALL GO HERE FOLLOWING THE PATTERN
 	// Protected handler to test our sessions
-	// mux.Handle("GET /dashboard", auth(Dashboard(f)))
+	mux.Handle("GET /logout", auth(LogoutPopUp(f)))
+	mux.Handle("POST /logout", auth(Logout(f)))
 
 	return mux
 }
