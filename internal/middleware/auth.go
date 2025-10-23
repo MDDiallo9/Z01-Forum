@@ -2,17 +2,21 @@ package middleware
 
 import (
 	"context"
-	"forum/internal/app"
 	"net/http"
 )
 
 // bcrypt hash/verify
 
+// SessionManager defines the dependency needed by AuthRequired
+type SessionManager interface {
+	GetUserFromRequest(r *http.Request) (string, error)
+}
+
 // Authentiation Middleware for sessions
-func AuthRequired(f *app.Application) func(http.Handler) http.Handler {
+func AuthRequired(sessions SessionManager) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			userID, err := f.Sessions.GetUserFromRequest(r)
+			userID, err := sessions.GetUserFromRequest(r)
 			if err != nil || userID == "" {
 				http.Redirect(w, r, "/login", http.StatusSeeOther)
 				return
