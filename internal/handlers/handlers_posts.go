@@ -14,14 +14,19 @@ type postForm struct {
 	Content     string
 	Author_id   string
 	Category_id int
-	Image       string
 	FieldErrors map[string]string
 	app.Validator
 }
 
+func CreatePostPage(f *app.Application) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		render(w, r, f, "create_post.html", nil)
+	}
+}
+
 func CreatePost(f *app.Application) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		err := r.ParseForm()
+		err := r.ParseMultipartForm(10 << 20)
 		if err != nil {
 			f.ErrorLog.Printf("Form parsing error: %v", err)
 			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
@@ -38,7 +43,7 @@ func CreatePost(f *app.Application) http.HandlerFunc {
 		form.CheckField(app.NotBlank(form.Title), "title", "This field cannot be blank")
 		form.CheckField(app.MaxChars(form.Title, 30), "title", "Title cannot exceed 30 chars")
 		form.CheckField(app.NotBlank(form.Content), "content", "This field cannot be blank")
-		form.CheckField(app.MaxChars(form.Title, 1000), "title", "Title cannot exceed 1000 chars")
+		form.CheckField(app.MaxChars(form.Content, 1000), "content", "Content cannot exceed 1000 chars")
 		// TODO : Add more tests
 
 		if !form.Valid() {
@@ -57,6 +62,36 @@ func CreatePost(f *app.Application) http.HandlerFunc {
 			f.ErrorLog.Printf("Post creation failed: %v", err)
 			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 			return
+		}
+
+		// Handle multiple file uploads
+		files := r.MultipartForm.File["attachments"] // Assuming input name is "attachments"
+		for _, header := range files {
+			// Skip empty file inputs
+			if header == nil || header.Filename == "" {
+				continue
+			}
+
+			file, err := header.Open()
+			if err != nil {
+				f.ErrorLog.Printf("Error opening uploaded file: %v", err)
+				continue // Or handle error more gracefully
+			}
+
+			// Save the file and get its path
+			filePath, err := app.UploadImage(file, *header, "posts") // Save to a 'posts' subdirectory
+			if err != nil {
+				f.ErrorLog.Printf("Error saving uploaded file: %v", err)
+				file.Close()
+				continue
+			}
+			file.Close()
+
+			// Save the attachment record to the database
+			err = f.Attachments.CreateForPost(filePath, int64(id))
+			if err != nil {
+				f.ErrorLog.Printf("Failed to create attachment record for post #%d: %v", id, err)
+			}
 		}
 
 		f.InfoLog.Printf("New post created with ID: %v", id)

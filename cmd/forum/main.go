@@ -23,7 +23,9 @@ func main() {
 	errLog := log.New(os.Stderr, "ERROR\t", log.Ldate|log.Ltime)
 	usersModel := &models.UsersModel{DB: db}
 	postsModel := &models.PostsModel{DB: db}
+	attachmentsModel := &models.AttachmentsModel{DB: db}
 
+	forum := app.NewApplication(info, errLog, usersModel, postsModel, attachmentsModel)
 	// Initialize services(SessionManager)
 	sessionManager := &services.SessionManager{
 		DB:         db,
