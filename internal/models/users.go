@@ -12,6 +12,12 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+const (
+	RoleNormal = iota
+	RoleModerator
+	RoleAdmin
+)
+
 type UsersModel struct {
 	DB *sql.DB
 }

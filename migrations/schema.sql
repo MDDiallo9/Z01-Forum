@@ -92,6 +92,28 @@ CREATE TABLE IF NOT EXISTS "sessions" (
 
 --------------------------------------------------
 
+CREATE TABLE IF NOT EXISTS "moderator_requests" (
+    "id" INTEGER NOT NULL PRIMARY KEY,
+    "user_id" TEXT NOT NULL,
+    "status" TEXT NOT NULL DEFAULT 'pending',
+    "created_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY ("user_id") REFERENCES "users" ("id") ON DELETE CASCADE
+);
+
+--------------------------------------------------
+
+CREATE TABLE IF NOT EXISTS "reports" (
+    "id" INTEGER NOT NULL PRIMARY KEY,
+    "post_id" INTEGER NOT NULL,
+    "reporter_id" INTEGER NOT NULL,
+    "reason" TEXT NOT NULL,
+    "status" TEXT NOT NULL DEFAULT 'open',
+    "created_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY ("post_id") REFERENCES "posts" ("id") ON DELETE CASCADE,
+    FOREIGN KEY ("reporter_id") REFERENCES "users" ("id") ON DELETE CASCADE
+);
+
+--------------------------------------------------
 CREATE UNIQUE INDEX IF NOT EXISTS "idx_unique_post_reaction"
 ON "reactions" ("user_id", "post_id")
 WHERE "post_id" IS NOT NULL;
