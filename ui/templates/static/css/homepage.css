@@ -119,7 +119,7 @@ main {
 
 /* Top post area*/
 #top-post {
-    background-color: green;
+    /* background-color: green; */
     width: 100%;
     height: 100%;
     display: flex;
@@ -131,13 +131,15 @@ main {
 #upper-top-post {
     width: 95%;
     height: 10%;
-    background-color: #8b7474;
+    background-color: #dad0d0;
+    border-top-left-radius: 15px;
+    border-top-right-radius: 15px
 }
 
 #lower-top-post {
     width: 95%;
     height: 85%;
-    background-color: #dad0d0;
+    background-color: #dad0d08a;
     overflow-y: auto;
     /* permet le scroll vertical fluide */
     overflow-x: hidden;
