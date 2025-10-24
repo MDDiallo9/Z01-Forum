@@ -138,72 +138,153 @@ main {
     width: 95%;
     height: 85%;
     background-color: #dad0d0;
-    overflow-y: scroll;
-    /* active le scroll vertical */
+    overflow-y: auto;
+    /* permet le scroll vertical fluide */
     overflow-x: hidden;
-    /* désactive le scroll horizontal */
     display: flex;
-
+    flex-direction: column;
+    /* empile les posts verticalement */
+    align-items: center;
+    /* centre horizontalement les posts */
+    gap: 20px;
+    /* espace entre les posts */
+    padding: 20px 0;
+    /* espace haut et bas */
+    scroll-behavior: smooth;
+    /* défilement doux */
 }
 
 .post {
-    width: 75%;
-    height: 90%;
-    background-color: #382121;
-    border: 1px solid;
+    width: 80%;
+    min-height: 200px;
+    background-color: #fff;
+    border: 1px solid #ccc;
+    border-radius: 10px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
 }
 
-/* Topics area*/
+.upper-post {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px;
+    background-color: #f5f5f5;
+    border-bottom: 1px solid #ddd;
+}
+
+.avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.username {
+    font-weight: 600;
+    color: #333;
+}
+
+.status {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background-color: #4caf50;
+    /* vert en ligne */
+    margin-left: auto;
+    /* pousse à droite */
+}
+
+
+/* --- Zone globale des topics --- */
 #topics-container {
     width: 30%;
     height: 100%;
-    background-color: rgb(135, 127, 127)
+    background-color: #f4f4f4;
+    border-left: 1px solid #ccc;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    font-family: "Inter", sans-serif;
 }
 
+/* --- Section bouton "New Post" --- */
 #create-post {
     width: 100%;
     height: 20%;
     display: flex;
     align-items: center;
     justify-content: center;
-
+    border-bottom: 1px solid #ddd;
+    background-color: #fff;
 }
 
 .new-post-button {
-    width: 50%;
-    height: 40%;
-    border-radius: 20px;
+    width: 70%;
+    height: 45px;
+    border: none;
+    border-radius: 25px;
     font-size: 1rem;
+    font-weight: 600;
+    background-color: #0078d7;
+    color: white;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    transition: background-color 0.25s ease, transform 0.1s ease;
 }
 
+.new-post-button:hover {
+    background-color: #005fa3;
+    transform: translateY(-1px);
+}
+
+/* --- Bloc des topics --- */
 #topics {
-    background-color: rgba(0, 128, 0, 0.252);
+    flex-grow: 1;
     width: 100%;
-    height: 100%;
-    /* gap: 5%; */
+    background-color: #fafafa;
     display: flex;
-    align-items: center;
-    /* justify-content: center; */
     flex-direction: column;
+    align-items: center;
+    padding: 20px 0;
+    overflow-y: auto;
 }
 
+/* Titre */
+#topics h3 {
+    color: #333;
+    font-size: 1.1rem;
+    margin-bottom: 15px;
+    border-bottom: 2px solid #0078d7;
+    padding-bottom: 5px;
+}
+
+/* Liste de topics */
 #topics div {
     display: flex;
     flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 7%;
-    height: 35%;
+    align-items: flex-start;
+    gap: 12px;
+    width: 80%;
 }
 
+/* Liens individuels */
 #topics div a {
-    color: white;
+    color: #0078d7;
     text-decoration: none;
-    font-weight: 400;
+    font-weight: 500;
     font-size: 0.95rem;
-    transition: opacity 0.2s ease;
-    display: flex;
-    gap: 15%;
+    padding: 8px 12px;
+    border-radius: 8px;
+    transition: background-color 0.2s ease, color 0.2s ease;
+    width: 100%;
+}
+
+#topics div a:hover {
+    background-color: #0078d7;
+    color: #fff;
 }
 
 

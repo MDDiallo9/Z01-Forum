@@ -24,14 +24,16 @@
         <div id="top-post">
           <div id="upper-top-post"></div>
           <div id="lower-top-post">
-            <div class="post"></div>
-            <div class="post"></div>
-            <div class="post"></div>
-            <div class="post"></div>
-            <div class="post"></div>
-            <div class="post"></div>
-            <div class="post"></div>
-            <div class="post"></div>
+            {{ range .Posts }}
+            <div class="post">
+              <div class="upper-post">
+                <img src="{{ .IconURL }}" alt="avatar" class="avatar" />
+                <span class="username">{{ .Username }}</span>
+                <span class="status"></span>
+              </div>
+              <div class="lower-post">{{ .Text }}</div>
+            </div>
+            {{ end }}
           </div>
         </div>
         <div id="topics-container">
@@ -41,11 +43,9 @@
           <div id="topics">
             <h3>Languages</h3>
             <div>
-              <a href="/">HTML/CSS</a>
-              <a href="/">JAVASCRIPT</a>
-              <a href="/">PHP</a>
-              <a href="/">GO</a>
-              <a href="/">C#</a>
+              {{ range .Topics }}
+              <a href="{{ .topicUrl }}">{{ .topic }}</a>
+              {{ end }}
             </div>
           </div>
         </div>
