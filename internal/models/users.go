@@ -18,8 +18,35 @@ const (
 	RoleAdmin
 )
 
+// A data object (entity) Holds data. Represents a single user in the system.
+type User struct {
+	ID       string
+	Username string
+	Email    string
+	Password string
+	Avatar   string
+	Role     int
+}
+
+// A service object that manages behaviour (connects, and interacts with the database)
 type UsersModel struct {
 	DB *sql.DB
+}
+
+// Get fetches a specific user from the database by the user ID
+func (m *UsersModel) Get(id string) (*User, error) {
+	user := &User{}
+	statement := `SELECT id, username, email, password, avatar, role FROM users WHERE id = ?`
+
+	// Use QueryRowContext for better cancellation and timeout handling
+	err := m.DB.QueryRow(statement, id).Scan(&user.ID, &user.Username, &user.Email, &user.Password, &user.Avatar, &user.Role)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, ErrNoRecords
+		}
+		return nil, err
+	}
+	return user, nil
 }
 
 func HashPassword(password string) (string, error) {

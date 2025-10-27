@@ -21,7 +21,7 @@ func Routes(f *app.Application) *http.ServeMux {
 
 	// Create an instance of the authentication middleware
 	// Then pass f.Sessions because it meets the SessionManager perequisites
-	auth := middleware.AuthRequired(f.Sessions)
+	auth := middleware.AuthRequired(f.Sessions, f.Users)
 
 	// PROTECTED ROUTES ALL GO HERE FOLLOWING THE PATTERN
 	// Protected handler to test our sessions
