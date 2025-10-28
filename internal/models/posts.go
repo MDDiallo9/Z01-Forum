@@ -3,14 +3,41 @@ package models
 import (
 	"database/sql"
 	"errors"
+	"time"
 
 	/* "errors"
 	"time" */
 	"github.com/mattn/go-sqlite3"
 )
 
+// Post (data object) represents a single post record from the database
+type Post struct {
+	ID           int
+	Title        string
+	Content      string
+	AuthorID     string
+	CategoryID   int
+	CreatedAt    time.Time
+	LastModified time.Time
+}
+
+// PostModel (service object) interacts with the DB
 type PostsModel struct {
 	DB *sql.DB
+}
+
+func (m *PostsModel) Get(id int) (*Post, error) {
+	post := &Post{}
+	statement := `SELECT id, title, content, author_id, category_id FROM posts WHERE id = ?`
+
+	err := m.DB.QueryRow(statement, id).Scan(&post.ID, &post.Title, &post.Content, &post.AuthorID, &post.CategoryID)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, ErrNoRecords
+		}
+		return nil, err
+	}
+	return post, nil
 }
 
 func (m *PostsModel) CreateNewPostDB(title, content, author_id string, category_id int) (int, error) {

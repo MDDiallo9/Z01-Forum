@@ -12,7 +12,7 @@ import (
 type contextKey string
 
 // contextKeyUser is the key used to store the user object in the request context
-const contextKeyUser = contextKey("user")
+const ContextKeyUser = contextKey("user")
 
 // SessionManager defines the dependency needed by AuthRequired
 type SessionManager interface {
@@ -37,17 +37,18 @@ func AuthRequired(sessions SessionManager, userModel *models.UsersModel) func(ht
 				return
 			}
 
-			ctx := context.WithValue(r.Context(), contextKeyUser, user)
+			ctx := context.WithValue(r.Context(), ContextKeyUser, user)
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}
 }
 
+// AUTHORIZATIONS
 // RequireModerator checks if the user is a moderator or not
 func RequireModerator(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Get the user from the context
-		user, ok := r.Context().Value(contextKeyUser).(*models.User)
+		user, ok := r.Context().Value(ContextKeyUser).(*models.User)
 		if !ok {
 			// This should not happen if AuthRequired is used first.
 			http.Error(w, "Authentication required", http.StatusUnauthorized)
@@ -64,10 +65,11 @@ func RequireModerator(next http.Handler) http.Handler {
 	})
 }
 
+// RequireAdmin checks if the user is ann admin or not
 func RequireAdmin(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Get the user from the context
-		user, ok := r.Context().Value(contextKeyUser).(*models.User)
+		user, ok := r.Context().Value(ContextKeyUser).(*models.User)
 		if !ok {
 			http.Error(w, "Authentication required", http.StatusUnauthorized)
 			return
