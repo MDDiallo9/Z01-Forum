@@ -49,6 +49,26 @@ func (m *UsersModel) Get(id string) (*User, error) {
 	return user, nil
 }
 
+// UpdateRole changes the role of the user
+func (m *UsersModel) UpdateRole(id string, newRole int) error {
+	statement := `UPDATE users SET role = ? WHERE id = ?`
+	result, err := m.DB.Exec(statement, newRole, id)
+	if err != nil {
+		return err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if rowsAffected == 0 {
+		return sql.ErrNoRows
+	}
+
+	return nil
+}
+
 func HashPassword(password string) (string, error) {
 	bytes, err := bcrypt.GenerateFromPassword([]byte(password), 14)
 	return string(bytes), err

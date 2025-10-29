@@ -22,6 +22,9 @@ func Routes(f *app.Application) *http.ServeMux {
 	// Create an instance of the authentication middleware
 	// Then pass f.Sessions because it meets the SessionManager perequisites
 	auth := middleware.AuthRequired(f.Sessions, f.Users)
+	adminOnly := func(next http.Handler) http.Handler {
+		return auth(middleware.RequireAdmin(next))
+	}
 
 	// PROTECTED ROUTES ALL GO HERE FOLLOWING THE PATTERN
 	// Protected handler to test our sessions
@@ -31,6 +34,11 @@ func Routes(f *app.Application) *http.ServeMux {
 	mux.Handle("PUT /post/update/{id}", auth(UpdatePost(f)))
 	mux.Handle("GET /logout", auth(LogoutPopUp(f)))
 	mux.Handle("POST /logout", auth(Logout(f)))
+
+	// ADMIN ONLY ROUTES
+	// We use PUT for the updates
+	mux.Handle("PUT /admin/users/{id}/promote", adminOnly(PromoteUser(f)))
+	mux.Handle("PUT /admin/users/{id}/demote", adminOnly(DemoteUser(f)))
 
 	return mux
 }
