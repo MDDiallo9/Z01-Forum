@@ -12,13 +12,14 @@ import (
 
 // Post (data object) represents a single post record from the database
 type Post struct {
-	ID           int
-	Title        string
-	Content      string
-	AuthorID     string
-	CategoryID   int
-	CreatedAt    time.Time
-	LastModified time.Time
+	ID           int          `json:"id"`
+	Title        string       `json:"title"`
+	Content      string       `json:"content"`
+	AuthorID     string       `json:"authorId"`
+	Username     string       `json:"username"`
+	CategoryID   int          `json:"categoryId"`
+	CreatedAt    time.Time    `json:"createdAt"`
+	LastModified sql.NullTime `json:"lastModified"`
 }
 
 // PostModel (service object) interacts with the DB
@@ -101,4 +102,36 @@ func (m *PostsModel) UpdatePostDB(title, content, author_id string, category_id,
 	}
 
 	return nil
+}
+
+func (m *PostsModel) ListRandom(limit int) ([]*Post, error) {
+	statement := `SELECT p.id, p.title, p.content, p.author_id, u.username, p.category_id, p.created_at, p.last_modified
+	FROM posts p
+	JOIN users u ON p.author_id = u.id
+	ORDER BY random
+	limit ?`
+
+	rows, err := m.DB.Query(statement, limit)
+	if err != nil {
+		// if errors.Is(err, sql.ErrNoRows) {
+		// 	return nil, ErrNoRecords
+		// }
+		return nil, err
+	}
+	defer rows.Close()
+
+	var posts []*Post
+	for rows.Next() {
+		post := &Post{}
+		err := rows.Scan(&post.ID, &post.Title, &post.Content, &post.AuthorID, &post.Username, &post.CategoryID, &post.CreatedAt, &post.LastModified)
+		if err != nil {
+			return nil, err
+		}
+		posts = append(posts, post)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+	return posts, nil
 }

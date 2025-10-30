@@ -8,6 +8,12 @@ import (
 
 // Register routes and all handlerson ServeMux; mount static, compose middleware
 
+func enableCORS(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", "*") // Allow any origin
+		next.ServeHTTP(w, r)
+	})
+}
 func Routes(f *app.Application) *http.ServeMux {
 	mux := http.NewServeMux()
 	fileServer := http.FileServer(http.Dir("./ui/templates/static"))
@@ -18,6 +24,10 @@ func Routes(f *app.Application) *http.ServeMux {
 	mux.HandleFunc("POST /register", Register(f))
 	mux.HandleFunc("GET /login", LoginPage(f))
 	mux.HandleFunc("POST /login", Login(f))
+
+	// API Routes that carry data from database to the frontend
+	mux.Handle("GET /api/posts", enableCORS(ListPosts(f)))
+	// mux.Handle("GET /api/categories", enableCORS(ListCategories(f)))
 
 	// Create an instance of the authentication middleware
 	// Then pass f.Sessions because it meets the SessionManager perequisites
