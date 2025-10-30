@@ -12,12 +12,14 @@ type Application struct {
 	Users        *models.UsersModel
 	Posts        *models.PostsModel
 	Attachments  *models.AttachmentsModel
+	Reports      *models.ReportsModel
 	Sessions     *services.SessionManager
 	TemplateData TemplateData
 }
 
 type TemplateData struct {
-	Form any
+	Form    any
+	Reports []*models.Report
 }
 
 func NewApplication(
@@ -26,6 +28,7 @@ func NewApplication(
 	users *models.UsersModel,
 	posts *models.PostsModel,
 	attachments *models.AttachmentsModel,
+	reports *models.ReportsModel,
 	sessions *services.SessionManager,
 ) *Application {
 	return &Application{
@@ -34,6 +37,7 @@ func NewApplication(
 		Users:       users,
 		Posts:       posts,
 		Attachments: attachments,
+		Reports:     reports,
 		Sessions:    sessions,
 	}
 }

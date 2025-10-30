@@ -1,0 +1,43 @@
+{{template "base" .}}
+
+{{define "title"}}Admin - Reports{{end}}
+
+{{define "main"}}
+    <h2>Reports</h2>
+    <!-- Links to filter reports -->
+    <a href="/admin/reports">All</a> | 
+    <a href="/admin/reports?status=pending">Pending</a> | 
+    <a href="/admin/reports?status=resolved">Resolved</a>
+
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Post ID</th>
+                <th>Reported By</th>
+                <th>Reason</th>
+                <th>Status</th>
+                <th>Date</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{range .Reports}}
+            <tr>
+                <td>{{.ID}}</td>
+                <td><a href="/post/{{.PostID}}">{{.PostID}}</a></td>
+                <td>{{.Username}}</td>
+                <td>{{.Reason}}</td>
+                <td>{{.Status}}</td>
+                <td>{{.CreatedAt}}</td>
+                <td>
+                    {{if eq .Status "pending"}}
+                        <!-- Link to resolve the report -->
+                        <a href="/admin/reports/{{.ID}}/resolve">Resolve</a>
+                    {{end}}
+                </td>
+            </tr>
+            {{end}}
+        </tbody>
+    </table>
+{{end}}
