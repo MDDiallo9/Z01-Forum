@@ -23,6 +23,7 @@ func main() {
 	errLog := log.New(os.Stderr, "ERROR\t", log.Ldate|log.Ltime)
 	usersModel := &models.UsersModel{DB: db}
 	postsModel := &models.PostsModel{DB: db}
+	categoriesModel := &models.CategoriesModel{DB: db}
 	attachmentsModel := &models.AttachmentsModel{DB: db}
 	reportsModel := &models.ReportsModel{DB: db}
 
@@ -34,7 +35,7 @@ func main() {
 		HardMax:    24 * time.Hour,
 	}
 
-	forum := app.NewApplication(info, errLog, usersModel, postsModel, attachmentsModel, reportsModel, sessionManager)
+	forum := app.NewApplication(info, errLog, usersModel, postsModel, categoriesModel, attachmentsModel, reportsModel, sessionManager)
 	mux := handlers.Routes(forum)
 	srv := app.Server(forum, mux)
 

@@ -27,7 +27,8 @@ func Routes(f *app.Application) *http.ServeMux {
 
 	// API Routes that carry data from database to the frontend
 	mux.Handle("GET /api/posts", enableCORS(ListPosts(f)))
-	// mux.Handle("GET /api/categories", enableCORS(ListCategories(f)))
+	mux.Handle("GET /api/categories", enableCORS(ListCategories(f)))
+	mux.Handle("GET /api/categories/{id}/posts", enableCORS(ListPostsByCategory(f)))
 
 	// Create an instance of the authentication middleware
 	// Then pass f.Sessions because it meets the SessionManager perequisites

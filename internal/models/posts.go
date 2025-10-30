@@ -135,3 +135,37 @@ func (m *PostsModel) ListRandom(limit int) ([]*Post, error) {
 	}
 	return posts, nil
 }
+
+func (m *PostsModel) ListByCategory(categoryID int, limit int) ([]*Post, error) {
+	statement := `SELECT p.id, p.title, p.content, p.author_id, u.username, p.category_id, p.created_at, p.last_modified
+	FROM posts p
+	JOIN users u ON p.author_id = u.id
+	WHERE p.category_id = ?
+	ORDER BY p.created_at DESC
+	LIMIT ?`
+
+	rows, err := m.DB.Query(statement, categoryID, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var posts []*Post
+	for rows.Next() {
+		post := &Post{}
+		err := rows.Scan(
+			&post.ID, &post.Title, &post.Content, &post.AuthorID, &post.Username,
+			&post.CategoryID, &post.CreatedAt, &post.LastModified,
+		)
+		if err != nil {
+			return nil, err
+		}
+		posts = append(posts, post)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return posts, nil
+}

@@ -11,6 +11,7 @@ type Application struct {
 	ErrorLog     *log.Logger
 	Users        *models.UsersModel
 	Posts        *models.PostsModel
+	Categories   *models.CategoriesModel
 	Attachments  *models.AttachmentsModel
 	Reports      *models.ReportsModel
 	Sessions     *services.SessionManager
@@ -27,6 +28,7 @@ func NewApplication(
 	errLog *log.Logger,
 	users *models.UsersModel,
 	posts *models.PostsModel,
+	categories *models.CategoriesModel,
 	attachments *models.AttachmentsModel,
 	reports *models.ReportsModel,
 	sessions *services.SessionManager,
@@ -36,6 +38,7 @@ func NewApplication(
 		ErrorLog:    errLog,
 		Users:       users,
 		Posts:       posts,
+		Categories:  categories,
 		Attachments: attachments,
 		Reports:     reports,
 		Sessions:    sessions,
