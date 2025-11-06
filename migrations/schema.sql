@@ -9,9 +9,7 @@ CREATE TABLE IF NOT EXISTS "users" (
     "email" VARCHAR NOT NULL UNIQUE,
     "password" VARCHAR NOT NULL,
     "avatar" VARCHAR,
-    "role" INTEGER NOT NULL DEFAULT 0,
-    "session_id" VARCHAR UNIQUE,
-    "session_created_at" TIMESTAMP
+    "role" INTEGER NOT NULL DEFAULT 0
 );
 
 --------------------------------------------------
@@ -48,7 +46,22 @@ CREATE TABLE IF NOT EXISTS "comments" (
     FOREIGN KEY ("post_id") REFERENCES "posts"("id") ON DELETE CASCADE
 );
 
+--------------------------------------------------
 
+CREATE TABLE IF NOT EXISTS "attachments" (
+    "id" INTEGER NOT NULL PRIMARY KEY,
+    "file_path" VARCHAR NOT NULL,
+    "post_id" INTEGER,
+    "comment_id" INTEGER,
+    FOREIGN KEY ("post_id") REFERENCES "posts"("id") ON DELETE CASCADE,
+    FOREIGN KEY ("comment_id") REFERENCES "comments"("id") ON DELETE CASCADE,
+    CHECK (
+        (post_id IS NOT NULL AND comment_id IS NULL) OR
+        (post_id IS NULL AND comment_id IS NOT NULL)
+    )
+);
+
+--------------------------------------------------
 
 CREATE TABLE IF NOT EXISTS "reactions" (
     "id" INTEGER NOT NULL PRIMARY KEY,
@@ -65,7 +78,32 @@ CREATE TABLE IF NOT EXISTS "reactions" (
     )
 );
 
+--------------------------------------------------
 
+CREATE TABLE IF NOT EXISTS "sessions" (
+    "id" STRING NOT NULL PRIMARY KEY,
+    "user_id" TEXT NOT NULL,
+    "created_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "expires_at" TIMESTAMP NOT NULL,
+    "ip_address" TEXT,
+    "user_agent" TEXT,
+    FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE
+);
+
+--------------------------------------------------
+
+CREATE TABLE IF NOT EXISTS "reports" (
+    "id" INTEGER NOT NULL PRIMARY KEY,
+    "post_id" INTEGER NOT NULL,
+    "user_id" TEXT NOT NULL,
+    "reason" TEXT NOT NULL,
+    "status" TEXT NOT NULL DEFAULT 'pending',
+    "created_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY ("post_id") REFERENCES "posts" ("id") ON DELETE CASCADE,
+    FOREIGN KEY ("reporter_id") REFERENCES "users" ("id") ON DELETE CASCADE
+);
+
+--------------------------------------------------
 CREATE UNIQUE INDEX IF NOT EXISTS "idx_unique_post_reaction"
 ON "reactions" ("user_id", "post_id")
 WHERE "post_id" IS NOT NULL;
@@ -73,3 +111,12 @@ WHERE "post_id" IS NOT NULL;
 CREATE UNIQUE INDEX IF NOT EXISTS "idx_unique_comment_reaction"
 ON "reactions" ("user_id", "comment_id")
 WHERE "comment_id" IS NOT NULL;
+
+CREATE UNIQUE INDEX IF NOT EXISTS "idx_session_user_id"
+ON "sessions" ("user_id");
+
+CREATE UNIQUE INDEX IF NOT EXISTS "idx_session_expires_at"
+ON "sessions" ("expires_at");
+
+CREATE INDEX IF NOT EXISTS "idx_reports_status" 
+ON "reports"

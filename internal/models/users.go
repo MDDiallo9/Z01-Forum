@@ -3,6 +3,8 @@ package models
 import (
 	"database/sql"
 	"errors"
+	"strings"
+
 	/* "errors"
 	"time" */
 	"github.com/google/uuid"
@@ -10,8 +12,61 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+const (
+	RoleNormal = iota
+	RoleModerator
+	RoleAdmin
+)
+
+// A data object (entity) Holds data. Represents a single user in the system.
+type User struct {
+	ID       string
+	Username string
+	Email    string
+	Password string
+	Avatar   string
+	Role     int
+}
+
+// A service object that manages behaviour (connects, and interacts with the database)
 type UsersModel struct {
 	DB *sql.DB
+}
+
+// Get fetches a specific user from the database by the user ID
+func (m *UsersModel) Get(id string) (*User, error) {
+	user := &User{}
+	statement := `SELECT id, username, email, password, avatar, role FROM users WHERE id = ?`
+
+	// Use QueryRowContext for better cancellation and timeout handling
+	err := m.DB.QueryRow(statement, id).Scan(&user.ID, &user.Username, &user.Email, &user.Password, &user.Avatar, &user.Role)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, ErrNoRecords
+		}
+		return nil, err
+	}
+	return user, nil
+}
+
+// UpdateRole changes the role of the user
+func (m *UsersModel) UpdateRole(id string, newRole int) error {
+	statement := `UPDATE users SET role = ? WHERE id = ?`
+	result, err := m.DB.Exec(statement, newRole, id)
+	if err != nil {
+		return err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if rowsAffected == 0 {
+		return sql.ErrNoRows
+	}
+
+	return nil
 }
 
 func HashPassword(password string) (string, error) {
@@ -31,8 +86,8 @@ func (m *UsersModel) Register(username, email, password, avatar string, role int
 		return "", err
 	}
 	session_id := uuid.New().String()
-	statement := `INSERT INTO users (id,username,email,password,avatar,role,session_id,session_created_at) 
-	VALUES(?,?,?,?,?,?,?,datetime())`
+	statement := `INSERT INTO users (id,username,email,password,avatar,role) 
+	VALUES(?,?,?,?,?,?)`
 
 	_, err = m.DB.Exec(statement, UUID, username, email, hashedPw, avatar, role, session_id)
 	if err != nil {
@@ -45,4 +100,31 @@ func (m *UsersModel) Register(username, email, password, avatar string, role int
 
 	// Returned ID is int64 type , we convert it before returning
 	return UUID, nil
+}
+
+func (m *UsersModel) Authenticate(emailOrUsername, password string) (string, error) {
+	emailOrUsername = strings.TrimSpace(emailOrUsername)
+
+	var id string
+	var hashedPassword string
+	statement := `SELECT id, password FROM users WHERE email = ? OR username = ?`
+	row := m.DB.QueryRow(statement, emailOrUsername, emailOrUsername)
+	err := row.Scan(&id, &hashedPassword)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return "", errors.New("invalid credentials")
+		}
+		return "", err
+	}
+
+	// Compare provided password if it matches the hashed password
+	err = bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(password))
+	if err != nil {
+		if errors.Is(err, bcrypt.ErrMismatchedHashAndPassword) {
+			return "", errors.New("invalid credentials")
+		}
+		return "", err
+	}
+
+	return id, nil
 }

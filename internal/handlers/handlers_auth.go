@@ -50,30 +50,30 @@ func Register(f *app.Application) http.HandlerFunc {
 		}
 
 		// Avatar Upload
-		
+
 		file, header, err := r.FormFile("avatar")
 		if err != nil {
-            // no file uploaded -> use default avatar
-            if err == http.ErrMissingFile {
-                form.Avatar = "default-avatar.jpg"
-            } else {
-                // real error reading the uploaded file
-                f.ErrorLog.Printf("error reading avatar file: %v", err)
-                form.Avatar = "default-avatar.jpg"
-            }
-        } else {
-            defer file.Close()
-            // user left the file input empty => filename may be empty
-            if header == nil || header.Filename == "" {
-                form.Avatar = "default-avatar.jpg"
-            } else {
-                form.Avatar, err = app.UploadImage(file, *header, "avatars")
-                if err != nil {
-                    log.Println(err)
-                    form.Avatar = "default-avatar.jpg"
-                }
-            }
-        }
+			// no file uploaded -> use default avatar
+			if err == http.ErrMissingFile {
+				form.Avatar = "default-avatar.jpg"
+			} else {
+				// real error reading the uploaded file
+				f.ErrorLog.Printf("error reading avatar file: %v", err)
+				form.Avatar = "default-avatar.jpg"
+			}
+		} else {
+			defer file.Close()
+			// user left the file input empty => filename may be empty
+			if header == nil || header.Filename == "" {
+				form.Avatar = "default-avatar.jpg"
+			} else {
+				form.Avatar, err = app.UploadImage(file, *header, "avatars")
+				if err != nil {
+					log.Println(err)
+					form.Avatar = "default-avatar.jpg"
+				}
+			}
+		}
 
 		uuid, err := f.Users.Register(form.Username, form.Email, form.Password, form.Avatar, 0)
 		if err != nil {
@@ -96,5 +96,53 @@ func Register(f *app.Application) http.HandlerFunc {
 
 		f.InfoLog.Printf("New user registered with UUID: %s", uuid)
 		w.Write([]byte("Registration successful!"))
+	}
+}
+
+func Login(f *app.Application) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		err := r.ParseForm()
+		if err != nil {
+			f.ErrorLog.Printf("Form parsing error: %v", err)
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			return
+		}
+
+		// Handle POST
+		emailOrUsername := r.PostForm.Get("username")
+		password := r.PostForm.Get("password")
+
+		id, err := f.Users.Authenticate(emailOrUsername, password)
+		if err != nil {
+			f.ErrorLog.Printf("User authentication failed: %v", err)
+			http.Error(w, "Invalid credentials", http.StatusUnauthorized)
+			return
+		}
+
+		// Create a session for the user.
+		err = f.Sessions.CreateSession(w, r, id)
+		if err != nil {
+			f.ErrorLog.Printf("Session creation failed: %v", err)
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			return
+		}
+
+		f.InfoLog.Printf("User with ID %s logged in successfully", id)
+		// w.Write([]byte("Login successful!"))
+
+		// Redirect to dashboard
+		http.Redirect(w, r, "/dashboard", http.StatusSeeOther)
+	}
+}
+
+func Logout(f *app.Application) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		err := f.Sessions.DestroySession(w, r)
+		if err != nil {
+			// Even if destroying the session fails, we still redirect user away from the protected route
+			f.ErrorLog.Printf(err.Error())
+		}
+		// Redirect to the homepage after logout. Useer can peruse and chill there.
+		http.Redirect(w, r, "/", http.StatusSeeOther)
 	}
 }
