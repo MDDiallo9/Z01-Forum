@@ -7,17 +7,18 @@ import (
 )
 
 type Application struct {
-	InfoLog      *log.Logger
-	ErrorLog     *log.Logger
-	Users        *models.UsersModel
-	Posts        *models.PostsModel
-	Categories   *models.CategoriesModel
-	Attachments  *models.AttachmentsModel
-	Reports      *models.ReportsModel
-	Likes        *models.LikesModel
-	Comments     *models.CommentsModel
-	Sessions     *services.SessionManager
-	TemplateData TemplateData
+	InfoLog       *log.Logger
+	ErrorLog      *log.Logger
+	Users         *models.UsersModel
+	Posts         *models.PostsModel
+	Categories    *models.CategoriesModel
+	Attachments   *models.AttachmentsModel
+	Reports       *models.ReportsModel
+	Notifications *models.NotificationsModel
+	Likes         *models.LikesModel
+	Comments      *models.CommentsModel
+	Sessions      *services.SessionManager
+	TemplateData  TemplateData
 }
 
 type TemplateData struct {
@@ -38,18 +39,20 @@ func NewApplication(
 	reports *models.ReportsModel,
 	likes *models.LikesModel,
 	comments *models.CommentsModel,
+	notifications *models.NotificationsModel,
 	sessions *services.SessionManager,
 ) *Application {
 	return &Application{
-		InfoLog:     info,
-		ErrorLog:    errLog,
-		Users:       users,
-		Posts:       posts,
-		Categories:  categories,
-		Attachments: attachments,
-		Reports:     reports,
-		Likes:       likes,
-		Comments:    comments,
-		Sessions:    sessions,
+		InfoLog:       info,
+		ErrorLog:      errLog,
+		Users:         users,
+		Posts:         posts,
+		Categories:    categories,
+		Attachments:   attachments,
+		Reports:       reports,
+		Likes:         likes,
+		Comments:      comments,
+		Notifications: notifications,
+		Sessions:      sessions,
 	}
 }
