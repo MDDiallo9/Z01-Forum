@@ -15,6 +15,7 @@ type Report struct {
 	Status    string
 	CreatedAt time.Time
 	Username  string
+	PostTitle string
 }
 
 // A service object that manages database acess methods for moderator requests
@@ -37,9 +38,10 @@ func (m *ReportsModel) Create(postID int, userID, reason string) error {
 // List retrieves all reports, optionally filtered by status.
 // Joining the users table helps us attach username to each list
 func (m *ReportsModel) List(status string) ([]*Report, error) {
-	statement := `SELECT r.id, r.post_id, r.user_id, r.reason, r.status, r.created_at, u.username
+	statement := `SELECT r.id, r.post_id, r.user_id, r.reason, r.status, r.created_at, u.username, p.title
 	FROM reports r
-	JOIN users u ON r.user_id = u.id`
+	JOIN users u ON r.user_id = u.id
+	JOIN posts p ON r.post_id = p.id`
 
 	// Sort by status
 	var args []interface{}
@@ -58,7 +60,7 @@ func (m *ReportsModel) List(status string) ([]*Report, error) {
 	var reports []*Report
 	for rows.Next() {
 		report := &Report{}
-		err := rows.Scan(&report.ID, &report.PostID, &report.UserID, &report.Reason, &report.Status, &report.CreatedAt, &report.Username)
+		err := rows.Scan(&report.ID, &report.PostID, &report.UserID, &report.Reason, &report.Status, &report.CreatedAt, &report.Username, &report.PostTitle)
 		if err != nil {
 			return nil, err
 		}
