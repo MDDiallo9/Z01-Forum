@@ -34,6 +34,12 @@ func Routes(f *app.Application) *http.ServeMux {
 	mux.Handle("GET /login", maybeAuth(LoginPage(f)))
 	mux.Handle("POST /login", maybeAuth(Login(f)))
 
+	// OAuth Routes
+	mux.Handle("GET /auth/google/login", maybeAuth(GoogleLogin(f)))
+	mux.Handle("GET /auth/google/callback", maybeAuth(GoogleCallback(f)))
+	mux.Handle("GET /auth/github/login", maybeAuth(GitHubLogin(f)))
+	mux.Handle("GET /auth/github/callback", maybeAuth(GitHubCallback(f)))
+
 	// API Routes that carry data from database to the frontend
 	mux.Handle("GET /api/posts", enableCORS(ListPosts(f)))
 	mux.Handle("GET /api/categories", enableCORS(ListCategories(f)))
@@ -45,7 +51,8 @@ func Routes(f *app.Application) *http.ServeMux {
 	mux.Handle("POST /post/create", auth(CreatePost(f)))
 	mux.Handle("GET /post/{id}", auth(GetPost(f)))
 	mux.Handle("DELETE /post/delete/{id}", auth(DeletePost(f)))
-	mux.Handle("PUT /post/update/{id}", auth(UpdatePost(f)))
+	mux.Handle("GET /post/{id}/update", auth(EditPostPage(f)))
+	mux.Handle("POST /post/{id}/update", auth(UpdatePost(f)))
 	mux.Handle("GET /logout", auth(LogoutPopUp(f)))
 	mux.Handle("POST /logout", auth(Logout(f)))
 
@@ -59,10 +66,16 @@ func Routes(f *app.Application) *http.ServeMux {
 	mux.Handle("POST /comment/{id}/like", auth(LikeComment(f)))
 	mux.Handle("POST /comment/{id}/dislike", auth(DislikeComment(f)))
 	mux.Handle("POST /post/{id}/comment", auth(CreateComment(f)))
+	mux.Handle("POST /comment/{id}/delete", auth(DeleteComment(f)))
 
-	// User Profile
-	mux.Handle("GET /user/posts", auth(UserCreatedPosts(f)))
-	mux.Handle("GET /user/liked", auth(UserLikedPosts(f)))
+	// User Profile Routes
+	mux.Handle("GET /profile", auth(UserCreatedPosts(f)))
+	mux.Handle("GET /profile/liked", auth(UserLikedPosts(f)))
+	mux.Handle("GET /profile/comments", auth(UserComments(f)))
+
+	// Notifications
+	mux.Handle("GET /notifications", auth(Notifications(f)))
+	mux.Handle("POST /notifications/read", auth(MarkNotificationRead(f)))
 
 	// ADMIN ONLY ROUTES
 	// User Management

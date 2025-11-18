@@ -60,6 +60,24 @@ func handleReaction(w http.ResponseWriter, r *http.Request, f *app.Application, 
 		return
 	}
 
+	// Create Notification if it's a post reaction
+	if isPost {
+		post, err := f.Posts.Get(id)
+		if err != nil {
+			f.ErrorLog.Printf("Error getting post for notification: %v", err)
+			// Continue without notification if post not found, or handle as needed
+		} else if post != nil && post.AuthorID != currentUser.ID { // Don't notify self
+			var notificationType string
+			if reactionType == 1 {
+				notificationType = "like"
+			} else {
+				notificationType = "dislike"
+			}
+			postIDInt := post.ID
+			f.Notifications.Create(post.AuthorID, currentUser.ID, notificationType, &postIDInt, nil)
+		}
+	}
+
 	// Redirect back to the page
 	http.Redirect(w, r, r.Header.Get("Referer"), http.StatusSeeOther)
 }

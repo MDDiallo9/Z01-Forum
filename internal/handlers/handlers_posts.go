@@ -2,10 +2,12 @@ package handlers
 
 import (
 	"errors"
+	"fmt"
+	"strconv"
+
 	"forum/internal/app"
 	"forum/internal/middleware"
 	"forum/internal/models"
-	"strconv"
 
 	"net/http"
 )
@@ -96,10 +98,40 @@ func CreatePost(f *app.Application) http.HandlerFunc {
 			return
 		}
 
-		id, err := f.Posts.CreateNewPostDB(form.Title, form.Content, form.Author_id, form.Category_ids)
+		// Handle multiple file uploads (Attachments) - Optional, if you want to keep this logic separate from the main image
+		// For now, we are focusing on the main post image handled above.
+		// If you want to support additional attachments, keep the logic here.
+		var imageURL string
+		files := r.MultipartForm.File["attachments"] // Assuming input name is "attachments"
+		if len(files) > 0 && files[0] != nil && files[0].Filename != "" {
+			file, err := files[0].Open()
+			if err != nil {
+				f.ErrorLog.Printf("Error opening uploaded file: %v", err)
+				http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+				return
+			}
+			defer file.Close()
+
+			imageURL, err = app.UploadImage(file, *files[0], "posts") // Save to a 'posts' subdirectory
+			if err != nil {
+				f.ErrorLog.Printf("Error saving uploaded file: %v", err)
+				http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+				return
+			}
+		}
+
+		post := models.Post{
+			Title:      form.Title,
+			Content:    form.Content,
+			AuthorID:   currentUser.ID,
+			ImageURL:   imageURL,
+			Categories: form.Category_ids,
+		}
+
+		id, err := f.Posts.CreateNewPostDB(post)
 		if err != nil {
 			if errors.Is(err, models.ErrDuplicateRecord) {
-
+				// Handle duplicate record if necessary
 			}
 
 			f.ErrorLog.Printf("Post creation failed: %v", err)
@@ -107,38 +139,7 @@ func CreatePost(f *app.Application) http.HandlerFunc {
 			return
 		}
 
-		// Handle multiple file uploads
-		files := r.MultipartForm.File["attachments"] // Assuming input name is "attachments"
-		for _, header := range files {
-			// Skip empty file inputs
-			if header == nil || header.Filename == "" {
-				continue
-			}
-
-			file, err := header.Open()
-			if err != nil {
-				f.ErrorLog.Printf("Error opening uploaded file: %v", err)
-				continue // Or handle error more gracefully
-			}
-
-			// Save the file and get its path
-			filePath, err := app.UploadImage(file, *header, "posts") // Save to a 'posts' subdirectory
-			if err != nil {
-				f.ErrorLog.Printf("Error saving uploaded file: %v", err)
-				file.Close()
-				continue
-			}
-			file.Close()
-
-			// Save the attachment record to the database
-			err = f.Attachments.CreateForPost(filePath, int64(id))
-			if err != nil {
-				f.ErrorLog.Printf("Failed to create attachment record for post #%d: %v", id, err)
-			}
-		}
-
 		f.InfoLog.Printf("New post created with ID: %v", id)
-		// w.Write([]byte("Post successful!"))
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 
 	}
@@ -194,6 +195,68 @@ func DeletePost(f *app.Application) http.HandlerFunc {
 	}
 }
 
+func EditPostPage(f *app.Application) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		id, err := strconv.Atoi(r.PathValue("id"))
+		if err != nil {
+			http.Error(w, "Invalid post ID", http.StatusBadRequest)
+			return
+		}
+
+		post, err := f.Posts.Get(id)
+		if err != nil {
+			if errors.Is(err, models.ErrNoRecords) {
+				http.NotFound(w, r)
+			} else {
+				f.ErrorLog.Printf("Error fetching post #%d: %v", id, err)
+				http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			}
+			return
+		}
+
+		// Get the currently logged-in user
+		currentUser := r.Context().Value(middleware.ContextKeyUser).(*models.User)
+		if currentUser.ID != post.AuthorID && currentUser.Role != models.RoleAdmin && currentUser.Role != models.RoleModerator {
+			http.Error(w, "Forbidden", http.StatusForbidden)
+			return
+		}
+
+		categories, err := f.Categories.ListAll()
+		if err != nil {
+			f.ErrorLog.Printf("Error fetching categories: %v", err)
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			return
+		}
+
+		// Convert post categories to ID slice for the form
+		var categoryIDs []int
+		// post.Categories is []int based on previous edits to models/posts.go
+		categoryIDs = post.Categories
+
+		form := &postForm{
+			Title:        post.Title,
+			Content:      post.Content,
+			Category_ids: categoryIDs,
+		}
+
+		type PageData struct {
+			Categories []*models.Category
+			Form       *postForm
+			PostID     int
+		}
+
+		data := &app.TemplateData{
+			Form: &PageData{
+				Categories: categories,
+				Form:       form,
+				PostID:     post.ID,
+			},
+		}
+
+		render(w, r, f, "edit_post.html", data)
+	}
+}
+
 // WIP : Not sure if the route should handle the ID or if should be sent from the edit form
 func UpdatePost(f *app.Application) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -222,10 +285,16 @@ func UpdatePost(f *app.Application) http.HandlerFunc {
 			return
 		}
 
+		err = r.ParseForm()
+		if err != nil {
+			http.Error(w, "Bad Request", http.StatusBadRequest)
+			return
+		}
+
 		form := &postForm{
 			Title:     r.PostForm.Get("title"),
 			Content:   r.PostForm.Get("content"),
-			Author_id: r.PostForm.Get("author_id"),
+			Author_id: post.AuthorID, // Keep original author
 		}
 
 		// Parse categories
@@ -240,7 +309,7 @@ func UpdatePost(f *app.Application) http.HandlerFunc {
 		form.CheckField(app.NotBlank(form.Title), "title", "This field cannot be blank")
 		form.CheckField(app.MaxChars(form.Title, 30), "title", "Title cannot exceed 30 chars")
 		form.CheckField(app.NotBlank(form.Content), "content", "This field cannot be blank")
-		form.CheckField(app.MaxChars(form.Title, 1000), "title", "Title cannot exceed 1000 chars")
+		form.CheckField(app.MaxChars(form.Content, 1000), "content", "Content cannot exceed 1000 chars")
 		if len(form.Category_ids) == 0 {
 			form.AddFieldError("categories", "At least one category must be selected")
 		}
@@ -253,10 +322,17 @@ func UpdatePost(f *app.Application) http.HandlerFunc {
 			type PageData struct {
 				Categories []*models.Category
 				Form       *postForm
+				PostID     int
 			}
 
-			data := &app.TemplateData{Form: &PageData{Categories: categories, Form: form}}
-			render(w, r, f, "post.html", data)
+			data := &app.TemplateData{
+				Form: &PageData{
+					Categories: categories,
+					Form:       form,
+					PostID:     id,
+				},
+			}
+			render(w, r, f, "edit_post.html", data)
 			return
 		}
 
@@ -265,8 +341,6 @@ func UpdatePost(f *app.Application) http.HandlerFunc {
 			if errors.Is(err, models.ErrNoRecords) {
 				http.Error(w, "Post not found", http.StatusNotFound)
 			} else if errors.Is(err, models.ErrDuplicateRecord) {
-				// This case is unlikely for an update unless you're changing to a title that already exists
-				// and have a UNIQUE constraint on it.
 				http.Error(w, "Update resulted in a duplicate record", http.StatusConflict)
 			} else {
 				f.ErrorLog.Printf("Post update failed for ID #%d: %v", id, err)
@@ -276,8 +350,7 @@ func UpdatePost(f *app.Application) http.HandlerFunc {
 		}
 
 		f.InfoLog.Printf("Updated post #%d", id)
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("Post updated successfully"))
+		http.Redirect(w, r, fmt.Sprintf("/post/%d", id), http.StatusSeeOther)
 	}
 }
 
