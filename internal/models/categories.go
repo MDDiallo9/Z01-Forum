@@ -12,7 +12,7 @@ type CategoriesModel struct {
 }
 
 func (m *CategoriesModel) ListAll() ([]*Category, error) {
-	statement := `SELECT id, name FROM categories ORDER BY ASC`
+	statement := `SELECT id, name FROM categories ORDER BY name ASC`
 
 	rows, err := m.DB.Query(statement)
 	if err != nil {

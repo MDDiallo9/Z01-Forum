@@ -85,11 +85,10 @@ func (m *UsersModel) Register(username, email, password, avatar string, role int
 	if err != nil {
 		return "", err
 	}
-	session_id := uuid.New().String()
 	statement := `INSERT INTO users (id,username,email,password,avatar,role) 
 	VALUES(?,?,?,?,?,?)`
 
-	_, err = m.DB.Exec(statement, UUID, username, email, hashedPw, avatar, role, session_id)
+	_, err = m.DB.Exec(statement, UUID, username, email, hashedPw, avatar, role)
 	if err != nil {
 		var sqliteErr sqlite3.Error
 		if errors.As(err, &sqliteErr) && sqliteErr.ExtendedCode == sqlite3.ErrConstraintUnique {

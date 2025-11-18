@@ -16,7 +16,7 @@ func InitDB() (*sql.DB, error) {
 	_, err := os.Stat(dbFile)
 	needsInit := os.IsNotExist(err)
 
-	DB, err = sql.Open("sqlite3", dbFile)
+	DB, err = sql.Open("sqlite3", dbFile+"?_parseTime=true")
 	if err != nil {
 		log.Fatal("Failed to open database:", err)
 		return nil, err
@@ -44,6 +44,15 @@ func InitDB() (*sql.DB, error) {
 
 	if _, err := DB.Exec("PRAGMA foreign_keys = ON;"); err != nil {
 		log.Printf("Warning: Could not enable foreign key constraints: %v", err)
+	}
+
+	// Seed default categories if they don't exist
+	seedQuery := `
+	INSERT OR IGNORE INTO categories (name) VALUES 
+	('Go'), ('JavaScript'), ('C++'), ('Rust'), ('Python'), ('Java'), ('PHP'), ('General');
+	`
+	if _, err := DB.Exec(seedQuery); err != nil {
+		log.Printf("Warning: Could not seed default categories: %v", err)
 	}
 
 	return DB, nil

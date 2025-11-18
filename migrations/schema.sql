@@ -26,11 +26,19 @@ CREATE TABLE IF NOT EXISTS "posts" (
     "title" VARCHAR NOT NULL,
     "content" TEXT NOT NULL,
     "author_id" TEXT NOT NULL,
-    "category_id" INTEGER,
     "created_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "last_modified" TIMESTAMP,
-    FOREIGN KEY ("author_id") REFERENCES "users"("id") ON DELETE CASCADE,
-    FOREIGN KEY ("category_id") REFERENCES "categories"("id") ON DELETE SET NULL
+    FOREIGN KEY ("author_id") REFERENCES "users"("id") ON DELETE CASCADE
+);
+
+--------------------------------------------------
+
+CREATE TABLE IF NOT EXISTS "post_categories" (
+    "post_id" INTEGER NOT NULL,
+    "category_id" INTEGER NOT NULL,
+    PRIMARY KEY ("post_id", "category_id"),
+    FOREIGN KEY ("post_id") REFERENCES "posts"("id") ON DELETE CASCADE,
+    FOREIGN KEY ("category_id") REFERENCES "categories"("id") ON DELETE CASCADE
 );
 
 --------------------------------------------------
@@ -100,7 +108,7 @@ CREATE TABLE IF NOT EXISTS "reports" (
     "status" TEXT NOT NULL DEFAULT 'pending',
     "created_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY ("post_id") REFERENCES "posts" ("id") ON DELETE CASCADE,
-    FOREIGN KEY ("reporter_id") REFERENCES "users" ("id") ON DELETE CASCADE
+    FOREIGN KEY ("user_id") REFERENCES "users" ("id") ON DELETE CASCADE
 );
 
 --------------------------------------------------
@@ -119,4 +127,15 @@ CREATE UNIQUE INDEX IF NOT EXISTS "idx_session_expires_at"
 ON "sessions" ("expires_at");
 
 CREATE INDEX IF NOT EXISTS "idx_reports_status" 
-ON "reports"
+ON "reports" ("status");
+
+--------------------------------------------------
+-- Seed Data
+INSERT OR IGNORE INTO categories (name) VALUES ('Go');
+INSERT OR IGNORE INTO categories (name) VALUES ('JavaScript');
+INSERT OR IGNORE INTO categories (name) VALUES ('C++');
+INSERT OR IGNORE INTO categories (name) VALUES ('Rust');
+INSERT OR IGNORE INTO categories (name) VALUES ('Python');
+INSERT OR IGNORE INTO categories (name) VALUES ('Java');
+INSERT OR IGNORE INTO categories (name) VALUES ('PHP');
+INSERT OR IGNORE INTO categories (name) VALUES ('General');
