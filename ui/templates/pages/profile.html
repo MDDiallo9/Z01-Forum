@@ -9,8 +9,9 @@
     </div>
 
     <div class="tabs" style="display: flex; gap: 1rem; margin-bottom: 1.5rem; border-bottom: 1px solid var(--border); padding-bottom: 1px;">
-        <a href="/user/posts" class="tab-link {{if .IsUserPosts}}active{{end}}" style="padding: 0.75rem 1.5rem; text-decoration: none; color: var(--text-muted); font-weight: 600; border-bottom: 2px solid transparent; transition: all 0.2s;">My Posts</a>
-        <a href="/user/liked" class="tab-link {{if .IsLikedPosts}}active{{end}}" style="padding: 0.75rem 1.5rem; text-decoration: none; color: var(--text-muted); font-weight: 600; border-bottom: 2px solid transparent; transition: all 0.2s;">Liked Posts</a>
+        <a href="/profile" class="tab-link {{if .Form.IsUserPosts}}active{{end}}" style="padding: 0.75rem 1.5rem; text-decoration: none; color: var(--text-muted); font-weight: 600; border-bottom: 2px solid transparent; transition: all 0.2s;">My Posts</a>
+        <a href="/profile/liked" class="tab-link {{if .Form.IsLikedPosts}}active{{end}}" style="padding: 0.75rem 1.5rem; text-decoration: none; color: var(--text-muted); font-weight: 600; border-bottom: 2px solid transparent; transition: all 0.2s;">Liked Posts</a>
+        <a href="/profile/comments" class="tab-link {{if .Form.IsComments}}active{{end}}" style="padding: 0.75rem 1.5rem; text-decoration: none; color: var(--text-muted); font-weight: 600; border-bottom: 2px solid transparent; transition: all 0.2s;">My Comments</a>
     </div>
 
     <style>
@@ -24,40 +25,60 @@
     </style>
 
     <div class="feed" style="display: flex; flex-direction: column; gap: 1.5rem;">
-        {{if .Form}}
-            {{range .Form}}
-            <article class="card">
-                <div class="post-header" style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem;">
-                    <div class="avatar" style="width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%); display: flex; align-items: center; justify-content: center; font-weight: 700; color: var(--primary);">{{slice .Username 0 2}}</div>
-                    <div class="post-meta" style="display: flex; flex-direction: column;">
-                        <div class="username" style="font-weight: 600; font-size: 0.95rem;">{{.Username}}</div>
-                        <div class="timestamp" style="font-size: 0.8rem; color: var(--text-muted);">{{.CreatedAt.Format "Jan 02, 2006 15:04"}}</div>
+        {{if .Form.IsComments}}
+            {{if .Form.Form}}
+                {{range .Form.Form}}
+                <div class="card" style="padding: 1.5rem;">
+                    <div class="post-header" style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
+                        <div class="avatar" style="width: 32px; height: 32px; font-size: 0.8rem; border-radius: 50%; background: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%); display: flex; align-items: center; justify-content: center; font-weight: 700; color: var(--primary);">{{slice .Username 0 2}}</div>
+                        <div class="post-meta" style="display: flex; flex-direction: column;">
+                            <div class="username" style="font-weight: 600; font-size: 0.85rem;">{{.Username}}</div>
+                            <div class="timestamp" style="font-size: 0.75rem; color: var(--text-muted);">{{.CreatedAt.Format "Jan 02, 2006 15:04"}}</div>
+                        </div>
+                    </div>
+                    <p style="color: var(--text-main); font-size: 0.95rem; margin-bottom: 1rem;">{{.Content}}</p>
+                    <div style="display: flex; justify-content: flex-end;">
+                        <a href="/post/{{.PostID}}" class="btn btn-ghost btn-sm">View Post</a>
                     </div>
                 </div>
-                <h2 class="post-title" style="font-size: 1.25rem; font-weight: 700; margin-bottom: 0.5rem; line-height: 1.3;">{{.Title}}</h2>
-                <p class="post-preview" style="color: var(--text-muted); margin-bottom: 1.25rem; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;">
-                    {{.Content}}
-                </p>
-                <div class="post-footer" style="display: flex; justify-content: space-between; align-items: center; padding-top: 1rem; border-top: 1px solid var(--border);">
-                    <div class="tags">
-                        <span class="tag" style="font-size: 0.75rem; padding: 0.25rem 0.75rem; background: #f1f5f9; color: var(--text-muted); border-radius: 999px; font-weight: 600;">Post #{{.ID}}</span>
-                    </div>
-                    <div class="actions" style="display: flex; gap: 1rem;">
-                         <a href="/post/{{.ID}}" class="action-btn" style="text-decoration: none; display: flex; align-items: center; gap: 0.35rem; color: var(--text-muted); font-size: 0.9rem; font-weight: 500; cursor: pointer; transition: color 0.2s;">
-                            View Post
-                        </a>
-                    </div>
-                </div>
-            </article>
+                {{end}}
             {{else}}
-            <div style="text-align: center; padding: 3rem; color: var(--text-muted); background: white; border-radius: var(--radius); box-shadow: var(--shadow);">
-                <p>No posts found.</p>
-            </div>
+                <div style="text-align: center; padding: 3rem; color: var(--text-muted); background: white; border-radius: var(--radius); box-shadow: var(--shadow);">
+                    <p>No comments found.</p>
+                </div>
             {{end}}
         {{else}}
-            <div style="text-align: center; padding: 3rem; color: var(--text-muted); background: white; border-radius: var(--radius); box-shadow: var(--shadow);">
-                <p>No posts found.</p>
-            </div>
+            {{if .Form.Form}}
+                {{range .Form.Form}}
+                <article class="card">
+                    <div class="post-header" style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem;">
+                        <div class="avatar" style="width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%); display: flex; align-items: center; justify-content: center; font-weight: 700; color: var(--primary);">{{slice .Username 0 2}}</div>
+                        <div class="post-meta" style="display: flex; flex-direction: column;">
+                            <div class="username" style="font-weight: 600; font-size: 0.95rem;">{{.Username}}</div>
+                            <div class="timestamp" style="font-size: 0.8rem; color: var(--text-muted);">{{.CreatedAt.Format "Jan 02, 2006 15:04"}}</div>
+                        </div>
+                    </div>
+                    <h2 class="post-title" style="font-size: 1.25rem; font-weight: 700; margin-bottom: 0.5rem; line-height: 1.3;">{{.Title}}</h2>
+                    <p class="post-preview" style="color: var(--text-muted); margin-bottom: 1.25rem; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;">
+                        {{.Content}}
+                    </p>
+                    <div class="post-footer" style="display: flex; justify-content: space-between; align-items: center; padding-top: 1rem; border-top: 1px solid var(--border);">
+                        <div class="tags">
+                            <span class="tag" style="font-size: 0.75rem; padding: 0.25rem 0.75rem; background: #f1f5f9; color: var(--text-muted); border-radius: 999px; font-weight: 600;">Post #{{.ID}}</span>
+                        </div>
+                        <div class="actions" style="display: flex; gap: 1rem;">
+                             <a href="/post/{{.ID}}" class="action-btn" style="text-decoration: none; display: flex; align-items: center; gap: 0.35rem; color: var(--text-muted); font-size: 0.9rem; font-weight: 500; cursor: pointer; transition: color 0.2s;">
+                                View Post
+                            </a>
+                        </div>
+                    </div>
+                </article>
+                {{end}}
+            {{else}}
+                <div style="text-align: center; padding: 3rem; color: var(--text-muted); background: white; border-radius: var(--radius); box-shadow: var(--shadow);">
+                    <p>No posts found.</p>
+                </div>
+            {{end}}
         {{end}}
     </div>
 </div>

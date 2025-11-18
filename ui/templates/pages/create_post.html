@@ -16,12 +16,27 @@
         </div>
         {{end}}
 
-        <form action="/post/create" method="POST" enctype="multipart/form-data" novalidate>
-            <div class="form-group">
-                <label for="title">Title</label>
-                <input type="text" id="title" name="title" value="{{.Form.Form.Title}}" required placeholder="What's on your mind?">
-            </div>
+        <form action="/post/create" method="POST" enctype="multipart/form-data" class="space-y-6">
+        <!-- Title Input -->
+        <div class="space-y-2">
+            <label for="title" class="block text-sm font-medium text-gray-300">Title</label>
+            <input type="text" id="title" name="title" value="{{.Form.Form.Title}}" 
+                class="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all text-white placeholder-gray-500"
+                placeholder="What's on your mind?">
+            {{with .Form.Form.FieldErrors.title}}
+                <p class="text-red-500 text-sm mt-1">{{.}}</p>
+            {{end}}
+        </div>
 
+        <!-- Image Upload -->
+        <div class="space-y-2">
+            <label for="image" class="block text-sm font-medium text-gray-300">Image (Optional, max 20MB)</label>
+            <input type="file" id="image" name="image" accept="image/png, image/jpeg, image/gif"
+                class="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all text-white file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-700">
+            {{with .Form.Form.FieldErrors.image}}
+                <p class="text-red-500 text-sm mt-1">{{.}}</p>
+            {{end}}
+        </div>
             <div class="form-group">
                 <label for="content">Content</label>
                 <textarea id="content" name="content" rows="10" required placeholder="Share your thoughts...">{{.Form.Form.Content}}</textarea>

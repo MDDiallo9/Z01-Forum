@@ -60,14 +60,16 @@
         <div class="nav-links">
             <a href="/" class="nav-link">Home</a>
             {{if .IsAuthenticated}}
-                <a href="/user/posts" class="nav-link">My Posts</a>
-                <a href="/user/liked" class="nav-link">Liked</a>
+                <a href="/notifications" class="nav-link">Notifications</a>
+                <a href="/profile" class="nav-link">Profile</a>
             {{end}}
         </div>
         <div class="nav-auth">
             {{if .IsAuthenticated}}
                 <a href="/post/create" class="btn btn-primary">New Post</a>
-                <a href="/logout" class="btn btn-ghost">Logout</a>
+                <form action="/auth/logout" method="POST" style="display: inline;">
+                    <button type="submit" class="btn btn-ghost">Logout</button>
+                </form>
             {{else}}
                 <a href="/login" class="btn btn-ghost">Login</a>
                 <a href="/register" class="btn btn-primary">Register</a>
