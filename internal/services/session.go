@@ -31,6 +31,13 @@ func (sm *SessionManager) CreateSession(w http.ResponseWriter, r *http.Request, 
 	ip := ExtractIPFromRequest(r)
 	userAgent := ExtractUserAgent(r)
 
+	// Delete any existing session for this user to enforce one session per user policy
+	deleteStmt := `DELETE FROM sessions WHERE user_id = ?`
+	_, err = sm.DB.Exec(deleteStmt, UserID)
+	if err != nil {
+		return err
+	}
+
 	// Insert session record nto sessions table in DB.sql
 	statement := `INSERT INTO sessions (id, user_id, created_at, expires_at, ip_address, user_agent)
 	VALUES(?, ?, ?, ?, ?, ?)`

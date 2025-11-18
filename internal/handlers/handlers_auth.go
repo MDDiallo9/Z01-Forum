@@ -3,6 +3,7 @@ package handlers
 import (
 	"errors"
 	"forum/internal/app"
+	"forum/internal/auth"
 	"forum/internal/models"
 	"log"
 
@@ -136,8 +137,8 @@ func Login(f *app.Application) http.HandlerFunc {
 		f.InfoLog.Printf("User with ID %s logged in successfully", id)
 		// w.Write([]byte("Login successful!"))
 
-		// Redirect to dashboard
-		http.Redirect(w, r, "/dashboard", http.StatusSeeOther)
+		// Redirect to home
+		http.Redirect(w, r, "/", http.StatusSeeOther)
 	}
 }
 
@@ -151,4 +152,94 @@ func Logout(f *app.Application) http.HandlerFunc {
 		// Redirect to the homepage after logout. Useer can peruse and chill there.
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 	}
+}
+
+func GoogleLogin(f *app.Application) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		url := auth.GoogleConfig.GetAuthURL("state-token") // In production, use a random state
+		http.Redirect(w, r, url, http.StatusTemporaryRedirect)
+	}
+}
+
+func GoogleCallback(f *app.Application) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		code := r.URL.Query().Get("code")
+		token, err := auth.GoogleConfig.Exchange(code)
+		if err != nil {
+			f.ErrorLog.Printf("Google exchange error: %v", err)
+			http.Error(w, "Failed to exchange token", http.StatusInternalServerError)
+			return
+		}
+
+		userInfo, err := auth.GoogleConfig.GetUserInfo(token)
+		if err != nil {
+			f.ErrorLog.Printf("Google user info error: %v", err)
+			http.Error(w, "Failed to get user info", http.StatusInternalServerError)
+			return
+		}
+
+		handleOAuthLogin(w, r, f, userInfo)
+	}
+}
+
+func GitHubLogin(f *app.Application) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		url := auth.GitHubConfig.GetAuthURL("state-token")
+		http.Redirect(w, r, url, http.StatusTemporaryRedirect)
+	}
+}
+
+func GitHubCallback(f *app.Application) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		code := r.URL.Query().Get("code")
+		token, err := auth.GitHubConfig.Exchange(code)
+		if err != nil {
+			f.ErrorLog.Printf("GitHub exchange error: %v", err)
+			http.Error(w, "Failed to exchange token", http.StatusInternalServerError)
+			return
+		}
+
+		userInfo, err := auth.GitHubConfig.GetUserInfo(token)
+		if err != nil {
+			f.ErrorLog.Printf("GitHub user info error: %v", err)
+			http.Error(w, "Failed to get user info", http.StatusInternalServerError)
+			return
+		}
+
+		handleOAuthLogin(w, r, f, userInfo)
+	}
+}
+
+func handleOAuthLogin(w http.ResponseWriter, r *http.Request, f *app.Application, userInfo *auth.UserInfo) {
+	// Check if user exists
+	user, err := f.Users.GetByEmail(userInfo.Email)
+	var userID string
+
+	if err != nil {
+		if errors.Is(err, models.ErrNoRecords) {
+			// Create new user
+			userID, err = f.Users.CreateOAuthUser(userInfo.Name, userInfo.Email, userInfo.Picture)
+			if err != nil {
+				f.ErrorLog.Printf("Failed to create OAuth user: %v", err)
+				http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+				return
+			}
+		} else {
+			f.ErrorLog.Printf("Database error: %v", err)
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			return
+		}
+	} else {
+		userID = user.ID
+	}
+
+	// Create session
+	err = f.Sessions.CreateSession(w, r, userID)
+	if err != nil {
+		f.ErrorLog.Printf("Session creation failed: %v", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+
+	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
