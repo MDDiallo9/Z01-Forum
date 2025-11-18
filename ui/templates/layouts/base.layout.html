@@ -2,13 +2,155 @@
 <!doctype html>
 <html lang='en'>
     <head>
-        <meta charset='utf-g'>
+        <meta charset='utf-8'>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Forum</title>
-        <link rel="stylesheet" href="/static/css/styles.css">
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+        <style>
+            :root {
+                --primary: #6366f1;
+                --primary-hover: #4f46e5;
+                --secondary: #ec4899;
+                --bg: #f8fafc;
+                --surface: #ffffff;
+                --text-main: #1e293b;
+                --text-muted: #64748b;
+                --border: #e2e8f0;
+                --radius: 12px;
+                --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+                --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+                --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+            }
+
+            * {
+                box-sizing: border-box;
+                margin: 0;
+                padding: 0;
+            }
+
+            body {
+                background-color: var(--bg);
+                color: var(--text-main);
+                font-family: 'Inter', sans-serif;
+                line-height: 1.6;
+                -webkit-font-smoothing: antialiased;
+            }
+
+            .container {
+                max-width: 1200px;
+                margin: 0 auto;
+                padding: 0 1.5rem;
+            }
+
+            /* Buttons */
+            .btn {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                padding: 0.5rem 1.25rem;
+                border-radius: 9999px;
+                font-weight: 600;
+                font-size: 0.95rem;
+                cursor: pointer;
+                transition: all 0.2s;
+                border: none;
+                text-decoration: none;
+            }
+
+            .btn-primary {
+                background-color: var(--primary);
+                color: white;
+                box-shadow: 0 4px 6px -1px rgba(99, 102, 241, 0.3);
+            }
+
+            .btn-primary:hover {
+                background-color: var(--primary-hover);
+                transform: translateY(-1px);
+                box-shadow: 0 6px 8px -1px rgba(99, 102, 241, 0.4);
+            }
+
+            .btn-ghost {
+                background: transparent;
+                color: var(--text-muted);
+            }
+
+            .btn-ghost:hover {
+                background: #f1f5f9;
+                color: var(--text-main);
+            }
+
+            /* Forms */
+            input, textarea, select {
+                width: 100%;
+                padding: 0.75rem 1rem;
+                border: 1px solid var(--border);
+                border-radius: 8px;
+                background-color: #f1f5f9;
+                font-family: inherit;
+                font-size: 1rem;
+                transition: all 0.2s;
+            }
+
+            input:focus, textarea:focus, select:focus {
+                outline: none;
+                background-color: white;
+                border-color: var(--primary);
+                box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+            }
+
+            label {
+                display: block;
+                font-weight: 500;
+                margin-bottom: 0.5rem;
+                color: var(--text-main);
+            }
+
+            .form-group {
+                margin-bottom: 1.5rem;
+            }
+            
+            .error-message {
+                color: #ef4444;
+                font-size: 0.875rem;
+                margin-top: 0.25rem;
+            }
+
+            /* Layout Grid */
+            .main-grid {
+                display: grid;
+                grid-template-columns: 240px 1fr 280px;
+                gap: 2rem;
+                padding-top: 2rem;
+                align-items: start;
+            }
+            
+            @media (max-width: 1024px) {
+                .main-grid {
+                    grid-template-columns: 1fr;
+                }
+                aside {
+                    display: none;
+                }
+            }
+
+            /* Cards */
+            .card {
+                background: var(--surface);
+                border-radius: var(--radius);
+                box-shadow: var(--shadow);
+                padding: 1.5rem;
+                border: 1px solid rgba(255,255,255,0.5);
+                transition: transform 0.2s, box-shadow 0.2s;
+            }
+        </style>
     </head>
     <body>
         {{template "nav" .}}
-        {{template "main" .}}
+        <div class="container">
+            {{template "main" .}}
+        </div>
     </body>
 </html>
 {{end}}

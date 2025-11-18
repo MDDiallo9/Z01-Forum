@@ -1,12 +1,78 @@
 {{define "nav"}}
-<header>
-    <h1>Forum</h1>
-    <nav>
-        <a href="/">Home</a>
-        <a href="/posts">Posts</a>
-        <a href="/categories">Categories</a>
-        <a href="/login" class="login-nav">Login</a>
-        <a href="/register" class="register-nav">Register</a>
-    </nav>
-</header>
+<style>
+    .navbar {
+        position: sticky;
+        top: 0;
+        z-index: 50;
+        background: rgba(255, 255, 255, 0.8);
+        backdrop-filter: blur(12px);
+        border-bottom: 1px solid var(--border);
+        padding: 0.75rem 0;
+        margin-bottom: 2rem;
+    }
+
+    .nav-content {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .logo {
+        font-weight: 800;
+        font-size: 1.5rem;
+        color: var(--primary);
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .nav-links {
+        display: flex;
+        gap: 2rem;
+        align-items: center;
+    }
+
+    .nav-link {
+        color: var(--text-main);
+        text-decoration: none;
+        font-weight: 500;
+        font-size: 0.95rem;
+        transition: color 0.2s;
+    }
+
+    .nav-link:hover {
+        color: var(--primary);
+    }
+    
+    .nav-auth {
+        display: flex;
+        gap: 1rem;
+        align-items: center;
+    }
+</style>
+<nav class="navbar">
+    <div class="container nav-content">
+        <a href="/" class="logo">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+            GoForum
+        </a>
+        <div class="nav-links">
+            <a href="/" class="nav-link">Home</a>
+            {{if .IsAuthenticated}}
+                <a href="/user/posts" class="nav-link">My Posts</a>
+                <a href="/user/liked" class="nav-link">Liked</a>
+            {{end}}
+        </div>
+        <div class="nav-auth">
+            {{if .IsAuthenticated}}
+                <a href="/post/create" class="btn btn-primary">New Post</a>
+                <a href="/logout" class="btn btn-ghost">Logout</a>
+            {{else}}
+                <a href="/login" class="btn btn-ghost">Login</a>
+                <a href="/register" class="btn btn-primary">Register</a>
+            {{end}}
+        </div>
+    </div>
+</nav>
 {{end}}

@@ -1,53 +1,63 @@
 {{template "base" .}}
 
 {{define "main"}}
+<div class="container" style="max-width: 800px; margin: 0 auto;">
+    <div class="card">
+        <h1 style="margin-bottom: 1.5rem; font-size: 1.75rem;">Create a New Post</h1>
+
+        {{if .Form.Form.FieldErrors}}
+        <div style="background-color: #fee2e2; border: 1px solid #ef4444; color: #b91c1c; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem;">
+            <p style="font-weight: 600;">Please correct the following errors:</p>
+            <ul style="margin-left: 1.5rem; margin-top: 0.5rem;">
+                {{range .Form.Form.FieldErrors}}
+                    <li>{{.}}</li>
+                {{end}}
+            </ul>
+        </div>
+        {{end}}
+
+        <form action="/post/create" method="POST" enctype="multipart/form-data" novalidate>
+            <div class="form-group">
+                <label for="title">Title</label>
+                <input type="text" id="title" name="title" value="{{.Form.Form.Title}}" required placeholder="What's on your mind?">
+            </div>
+
+            <div class="form-group">
+                <label for="content">Content</label>
+                <textarea id="content" name="content" rows="10" required placeholder="Share your thoughts...">{{.Form.Form.Content}}</textarea>
+            </div>
+
+            <div class="form-group">
+                <label>Categories (Select at least one)</label>
+                <div style="display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.5rem;">
+                    {{range .Form.Categories}}
+                    <label style="display: inline-flex; align-items: center; padding: 0.5rem 1rem; background: #f1f5f9; border-radius: 999px; cursor: pointer; transition: all 0.2s; font-weight: 500; user-select: none;">
+                        <input type="checkbox" name="categories" value="{{.ID}}" style="width: auto; margin-right: 0.5rem;">
+                        {{.Name}}
+                    </label>
+                    {{end}}
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="attachments">Attachments (Optional)</label>
+                <input type="file" id="attachments" name="attachments" accept="image/png, image/jpeg, image/gif" multiple style="background: white;">
+                <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.5rem;">Max size: 20MB. Supported formats: PNG, JPEG, GIF.</p>
+            </div>
+
+            <div style="display: flex; justify-content: flex-end; gap: 1rem; margin-top: 2rem;">
+                <a href="/" class="btn btn-ghost">Cancel</a>
+                <button type="submit" class="btn btn-primary">Create Post</button>
+            </div>
+        </form>
+    </div>
+</div>
+
 <style>
-    /* Simple styles for the create post page, can be moved to styles.css */
-    textarea {
-        background: transparent;
-        border: 1.5px solid #333;
-        border-radius: 8px;
-        padding: 14px 18px;
-        color: white;
-        font-size: 0.95rem;
-        margin-bottom: 15px;
-        transition: border-color 0.3s ease;
-        width: 100%;
-        font-family: inherit;
-    }
-    select {
-        background: transparent;
-        border: 1.5px solid #333;
-        border-radius: 8px;
-        padding: 14px 18px;
-        color: white;
-        font-size: 0.95rem;
-        margin-bottom: 15px;
-        width: 100%;
-    }
-    select option {
-        background: #0a2438;
+    /* Custom checkbox styling for categories */
+    input[type="checkbox"]:checked + span {
+        background-color: var(--primary);
         color: white;
     }
 </style>
-<div class="register-container">
-    <h1>Create a New Post</h1>
-
-    <form action="/post" method="POST" enctype="multipart/form-data" novalidate>
-        <!-- Debug: Hardcoded author_id -->
-        <input type="hidden" name="author_id" value="845b3ec4-d181-4c0b-9983-c05d4d5c31bb">
-        <input type="hidden" name="category_id" value="1">
-        
-        <label for="title">Title*</label>
-        <input type="text" id="title" name="title" required>
-
-        <label for="content">Content*</label>
-        <textarea id="content" name="content" rows="10" required></textarea>
-
-        <label for="attachments">Attachments (Optional)</label>
-        <input type="file" id="attachments" name="attachments" accept="image/png, image/jpeg, image/gif" multiple>
-
-        <button type="submit">Create Post</button>
-    </form>
-</div>
 {{end}}
