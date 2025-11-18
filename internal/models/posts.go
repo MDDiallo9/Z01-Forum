@@ -5,33 +5,68 @@ import (
 	"errors"
 	"time"
 
-	/* "errors"
-	"time" */
 	"github.com/mattn/go-sqlite3"
 )
 
-// Post (data object) represents a single post record from the database
 type Post struct {
 	ID           int          `json:"id"`
 	Title        string       `json:"title"`
 	Content      string       `json:"content"`
 	AuthorID     string       `json:"authorId"`
-	Username     string       `json:"username"`
-	Categories   []int        `json:"categories"` // Changed from CategoryID int
+	AuthorName   string       `json:"username"`
+	ImageURL     string       `json:"imageUrl"`
+	Categories   []int        `json:"categories"`
 	CreatedAt    time.Time    `json:"createdAt"`
 	LastModified sql.NullTime `json:"lastModified"`
+	LikeCount    int          `json:"likeCount"`
+	DislikeCount int          `json:"dislikeCount"`
+	CommentCount int          `json:"commentCount"`
 }
 
-// PostModel (service object) interacts with the DB
 type PostsModel struct {
 	DB *sql.DB
 }
 
-func (m *PostsModel) Get(id int) (*Post, error) {
-	post := &Post{}
-	statement := `SELECT id, title, content, author_id, created_at, last_modified FROM posts WHERE id = ?`
+func (m *PostsModel) CreateNewPostDB(post Post) (int64, error) {
+	query := `INSERT INTO posts (title, content, author_id, image_url, created_at) VALUES (?, ?, ?, ?, ?)`
+	result, err := m.DB.Exec(query, post.Title, post.Content, post.AuthorID, post.ImageURL, time.Now())
+	if err != nil {
+		return 0, err
+	}
 
-	err := m.DB.QueryRow(statement, id).Scan(&post.ID, &post.Title, &post.Content, &post.AuthorID, &post.CreatedAt, &post.LastModified)
+	postID, err := result.LastInsertId()
+	if err != nil {
+		return 0, err
+	}
+
+	// Insert categories
+	for _, catID := range post.Categories {
+		_, err := m.DB.Exec("INSERT INTO post_categories (post_id, category_id) VALUES (?, ?)", postID, catID)
+		if err != nil {
+			return 0, err
+		}
+	}
+
+	return postID, nil
+}
+
+func (m *PostsModel) Get(id int) (*Post, error) {
+	query := `
+		SELECT p.id, p.title, p.content, p.author_id, u.username, p.image_url, p.created_at, p.last_modified,
+		(SELECT COUNT(*) FROM reactions WHERE post_id = p.id AND type = 1) as likes,
+		(SELECT COUNT(*) FROM reactions WHERE post_id = p.id AND type = -1) as dislikes,
+		(SELECT COUNT(*) FROM comments WHERE post_id = p.id) as comments
+		FROM posts p
+		JOIN users u ON p.author_id = u.id
+		WHERE p.id = ?
+	`
+	row := m.DB.QueryRow(query, id)
+
+	var post Post
+	var lastModified sql.NullTime
+	var imageURL sql.NullString
+
+	err := row.Scan(&post.ID, &post.Title, &post.Content, &post.AuthorID, &post.AuthorName, &imageURL, &post.CreatedAt, &lastModified, &post.LikeCount, &post.DislikeCount, &post.CommentCount)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, ErrNoRecords
@@ -39,63 +74,187 @@ func (m *PostsModel) Get(id int) (*Post, error) {
 		return nil, err
 	}
 
+	if lastModified.Valid {
+		post.LastModified.Time = lastModified.Time
+		post.LastModified.Valid = true
+	}
+	if imageURL.Valid {
+		post.ImageURL = imageURL.String
+	}
+
 	// Fetch categories
-	categories, err := m.getCategoriesForPost(id)
+	catQuery := `SELECT category_id FROM post_categories WHERE post_id = ?`
+	rows, err := m.DB.Query(catQuery, id)
 	if err != nil {
 		return nil, err
 	}
-	post.Categories = categories
+	defer rows.Close()
 
-	return post, nil
+	for rows.Next() {
+		var catID int
+		if err := rows.Scan(&catID); err != nil {
+			return nil, err
+		}
+		post.Categories = append(post.Categories, catID)
+	}
+
+	return &post, nil
 }
 
-func (m *PostsModel) CreateNewPostDB(title, content, author_id string, category_ids []int) (int, error) {
-	statement := `INSERT INTO posts (title,content,author_id,created_at)
-	VALUES (?,?,?,datetime())`
-
-	result, err := m.DB.Exec(statement, title, content, author_id)
+func (m *PostsModel) ListAll() ([]*Post, error) {
+	query := `
+		SELECT p.id, p.title, p.content, p.author_id, u.username, p.image_url, p.created_at, p.last_modified,
+		(SELECT COUNT(*) FROM reactions WHERE post_id = p.id AND type = 1) as likes,
+		(SELECT COUNT(*) FROM reactions WHERE post_id = p.id AND type = -1) as dislikes,
+		(SELECT COUNT(*) FROM comments WHERE post_id = p.id) as comments
+		FROM posts p
+		JOIN users u ON p.author_id = u.id
+		ORDER BY p.created_at DESC
+	`
+	rows, err := m.DB.Query(query)
 	if err != nil {
-		var sqliteErr sqlite3.Error
-		if errors.As(err, &sqliteErr) && sqliteErr.ExtendedCode == sqlite3.ErrConstraintUnique {
-			return 0, ErrDuplicateRecord
-		}
-		return 0, err
+		return nil, err
 	}
-	id64, err := result.LastInsertId()
-	if err != nil {
-		return 0, err
-	}
-	id := int(id64)
+	defer rows.Close()
 
-	// Insert categories
-	for _, catID := range category_ids {
-		_, err := m.DB.Exec(`INSERT INTO post_categories (post_id, category_id) VALUES (?, ?)`, id, catID)
+	var posts []*Post
+	for rows.Next() {
+		var post Post
+		var lastModified sql.NullTime
+		var imageURL sql.NullString
+		err := rows.Scan(&post.ID, &post.Title, &post.Content, &post.AuthorID, &post.AuthorName, &imageURL, &post.CreatedAt, &lastModified, &post.LikeCount, &post.DislikeCount, &post.CommentCount)
 		if err != nil {
-			return 0, err
+			return nil, err
 		}
-	}
+		if lastModified.Valid {
+			post.LastModified.Time = lastModified.Time
+			post.LastModified.Valid = true
+		}
+		if imageURL.Valid {
+			post.ImageURL = imageURL.String
+		}
 
-	return id, nil
+		// Fetch categories (N+1 problem, but acceptable for small scale)
+		catQuery := `SELECT category_id FROM post_categories WHERE post_id = ?`
+		catRows, err := m.DB.Query(catQuery, post.ID)
+		if err == nil {
+			for catRows.Next() {
+				var catID int
+				catRows.Scan(&catID)
+				post.Categories = append(post.Categories, catID)
+			}
+			catRows.Close()
+		}
+
+		posts = append(posts, &post)
+	}
+	return posts, nil
 }
 
-func (m *PostsModel) DeletePostDB(id int) error {
-	statement := `DELETE from posts WHERE id = ?`
-
-	result, err := m.DB.Exec(statement, id)
+func (m *PostsModel) ListByAuthor(authorID string) ([]*Post, error) {
+	query := `
+		SELECT p.id, p.title, p.content, p.author_id, u.username, p.image_url, p.created_at, p.last_modified,
+		(SELECT COUNT(*) FROM reactions WHERE post_id = p.id AND type = 1) as likes,
+		(SELECT COUNT(*) FROM reactions WHERE post_id = p.id AND type = -1) as dislikes,
+		(SELECT COUNT(*) FROM comments WHERE post_id = p.id) as comments
+		FROM posts p
+		JOIN users u ON p.author_id = u.id
+		WHERE p.author_id = ?
+		ORDER BY p.created_at DESC
+	`
+	rows, err := m.DB.Query(query, authorID)
 	if err != nil {
-		return err
+		return nil, err
 	}
+	defer rows.Close()
 
-	rowsAffected, err := result.RowsAffected()
-	if err != nil {
-		return err
+	var posts []*Post
+	for rows.Next() {
+		var post Post
+		var lastModified sql.NullTime
+		var imageURL sql.NullString
+		err := rows.Scan(&post.ID, &post.Title, &post.Content, &post.AuthorID, &post.AuthorName, &imageURL, &post.CreatedAt, &lastModified, &post.LikeCount, &post.DislikeCount, &post.CommentCount)
+		if err != nil {
+			return nil, err
+		}
+		if lastModified.Valid {
+			post.LastModified.Time = lastModified.Time
+			post.LastModified.Valid = true
+		}
+		if imageURL.Valid {
+			post.ImageURL = imageURL.String
+		}
+
+		// Fetch categories
+		catQuery := `SELECT category_id FROM post_categories WHERE post_id = ?`
+		catRows, err := m.DB.Query(catQuery, post.ID)
+		if err == nil {
+			for catRows.Next() {
+				var catID int
+				catRows.Scan(&catID)
+				post.Categories = append(post.Categories, catID)
+			}
+			catRows.Close()
+		}
+
+		posts = append(posts, &post)
 	}
-	if rowsAffected == 0 {
-		return ErrNoRecords
-	}
-	return nil
+	return posts, nil
 }
 
+func (m *PostsModel) ListLikedByUser(userID string) ([]*Post, error) {
+	query := `
+		SELECT p.id, p.title, p.content, p.author_id, u.username, p.image_url, p.created_at, p.last_modified,
+		(SELECT COUNT(*) FROM reactions WHERE post_id = p.id AND type = 1) as likes,
+		(SELECT COUNT(*) FROM reactions WHERE post_id = p.id AND type = -1) as dislikes,
+		(SELECT COUNT(*) FROM comments WHERE post_id = p.id) as comments
+		FROM posts p
+		JOIN users u ON p.author_id = u.id
+		JOIN reactions r ON p.id = r.post_id
+		WHERE r.user_id = ? AND r.type = 1
+		ORDER BY r.id DESC
+	`
+	rows, err := m.DB.Query(query, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var posts []*Post
+	for rows.Next() {
+		var post Post
+		var lastModified sql.NullTime
+		var imageURL sql.NullString
+		err := rows.Scan(&post.ID, &post.Title, &post.Content, &post.AuthorID, &post.AuthorName, &imageURL, &post.CreatedAt, &lastModified, &post.LikeCount, &post.DislikeCount, &post.CommentCount)
+		if err != nil {
+			return nil, err
+		}
+		if lastModified.Valid {
+			post.LastModified.Time = lastModified.Time
+			post.LastModified.Valid = true
+		}
+		if imageURL.Valid {
+			post.ImageURL = imageURL.String
+		}
+
+		// Fetch categories
+		catQuery := `SELECT category_id FROM post_categories WHERE post_id = ?`
+		catRows, err := m.DB.Query(catQuery, post.ID)
+		if err == nil {
+			for catRows.Next() {
+				var catID int
+				catRows.Scan(&catID)
+				post.Categories = append(post.Categories, catID)
+			}
+			catRows.Close()
+		}
+
+		posts = append(posts, &post)
+	}
+	return posts, nil
+}
+
+// UpdatePostDB updates a post in the database
 func (m *PostsModel) UpdatePostDB(title, content, author_id string, category_ids []int, id int) error {
 	statement := `UPDATE posts
     SET title = ?, content = ?, author_id = ?, last_modified = datetime()
@@ -134,8 +293,30 @@ func (m *PostsModel) UpdatePostDB(title, content, author_id string, category_ids
 	return nil
 }
 
+// DeletePostDB deletes a post from the database
+func (m *PostsModel) DeletePostDB(id int) error {
+	statement := `DELETE from posts WHERE id = ?`
+
+	result, err := m.DB.Exec(statement, id)
+	if err != nil {
+		return err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rowsAffected == 0 {
+		return ErrNoRecords
+	}
+	return nil
+}
+
 func (m *PostsModel) ListRandom(limit int) ([]*Post, error) {
-	statement := `SELECT p.id, p.title, p.content, p.author_id, u.username, p.created_at, p.last_modified
+	statement := `SELECT p.id, p.title, p.content, p.author_id, u.username, p.image_url, p.created_at, p.last_modified,
+	(SELECT COUNT(*) FROM reactions WHERE post_id = p.id AND type = 1) as likes,
+	(SELECT COUNT(*) FROM reactions WHERE post_id = p.id AND type = -1) as dislikes,
+	(SELECT COUNT(*) FROM comments WHERE post_id = p.id) as comments
 	FROM posts p
 	JOIN users u ON p.author_id = u.id
 	ORDER BY RANDOM()
@@ -149,10 +330,19 @@ func (m *PostsModel) ListRandom(limit int) ([]*Post, error) {
 
 	var posts []*Post
 	for rows.Next() {
-		post := &Post{}
-		err := rows.Scan(&post.ID, &post.Title, &post.Content, &post.AuthorID, &post.Username, &post.CreatedAt, &post.LastModified)
+		var post Post
+		var lastModified sql.NullTime
+		var imageURL sql.NullString
+		err := rows.Scan(&post.ID, &post.Title, &post.Content, &post.AuthorID, &post.AuthorName, &imageURL, &post.CreatedAt, &lastModified, &post.LikeCount, &post.DislikeCount, &post.CommentCount)
 		if err != nil {
 			return nil, err
+		}
+		if lastModified.Valid {
+			post.LastModified.Time = lastModified.Time
+			post.LastModified.Valid = true
+		}
+		if imageURL.Valid {
+			post.ImageURL = imageURL.String
 		}
 
 		categories, err := m.getCategoriesForPost(post.ID)
@@ -161,7 +351,7 @@ func (m *PostsModel) ListRandom(limit int) ([]*Post, error) {
 		}
 		post.Categories = categories
 
-		posts = append(posts, post)
+		posts = append(posts, &post)
 	}
 
 	if err = rows.Err(); err != nil {
@@ -171,7 +361,10 @@ func (m *PostsModel) ListRandom(limit int) ([]*Post, error) {
 }
 
 func (m *PostsModel) ListByCategory(categoryID int, limit int) ([]*Post, error) {
-	statement := `SELECT p.id, p.title, p.content, p.author_id, u.username, p.created_at, p.last_modified
+	statement := `SELECT p.id, p.title, p.content, p.author_id, u.username, p.image_url, p.created_at, p.last_modified,
+	(SELECT COUNT(*) FROM reactions WHERE post_id = p.id AND type = 1) as likes,
+	(SELECT COUNT(*) FROM reactions WHERE post_id = p.id AND type = -1) as dislikes,
+	(SELECT COUNT(*) FROM comments WHERE post_id = p.id) as comments
 	FROM posts p
 	JOIN users u ON p.author_id = u.id
 	JOIN post_categories pc ON p.id = pc.post_id
@@ -187,13 +380,22 @@ func (m *PostsModel) ListByCategory(categoryID int, limit int) ([]*Post, error) 
 
 	var posts []*Post
 	for rows.Next() {
-		post := &Post{}
+		var post Post
+		var lastModified sql.NullTime
+		var imageURL sql.NullString
 		err := rows.Scan(
-			&post.ID, &post.Title, &post.Content, &post.AuthorID, &post.Username,
-			&post.CreatedAt, &post.LastModified,
+			&post.ID, &post.Title, &post.Content, &post.AuthorID, &post.AuthorName, &imageURL,
+			&post.CreatedAt, &lastModified, &post.LikeCount, &post.DislikeCount, &post.CommentCount,
 		)
 		if err != nil {
 			return nil, err
+		}
+		if lastModified.Valid {
+			post.LastModified.Time = lastModified.Time
+			post.LastModified.Valid = true
+		}
+		if imageURL.Valid {
+			post.ImageURL = imageURL.String
 		}
 
 		categories, err := m.getCategoriesForPost(post.ID)
@@ -202,88 +404,7 @@ func (m *PostsModel) ListByCategory(categoryID int, limit int) ([]*Post, error) 
 		}
 		post.Categories = categories
 
-		posts = append(posts, post)
-	}
-
-	if err = rows.Err(); err != nil {
-		return nil, err
-	}
-
-	return posts, nil
-}
-
-func (m *PostsModel) ListByAuthor(authorID string) ([]*Post, error) {
-	statement := `SELECT p.id, p.title, p.content, p.author_id, u.username, p.created_at, p.last_modified
-	FROM posts p
-	JOIN users u ON p.author_id = u.id
-	WHERE p.author_id = ?
-	ORDER BY p.created_at DESC`
-
-	rows, err := m.DB.Query(statement, authorID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	var posts []*Post
-	for rows.Next() {
-		post := &Post{}
-		err := rows.Scan(
-			&post.ID, &post.Title, &post.Content, &post.AuthorID, &post.Username,
-			&post.CreatedAt, &post.LastModified,
-		)
-		if err != nil {
-			return nil, err
-		}
-
-		categories, err := m.getCategoriesForPost(post.ID)
-		if err != nil {
-			return nil, err
-		}
-		post.Categories = categories
-
-		posts = append(posts, post)
-	}
-
-	if err = rows.Err(); err != nil {
-		return nil, err
-	}
-
-	return posts, nil
-}
-
-func (m *PostsModel) ListLikedByUser(userID string) ([]*Post, error) {
-	statement := `SELECT p.id, p.title, p.content, p.author_id, u.username, p.created_at, p.last_modified
-	FROM posts p
-	JOIN users u ON p.author_id = u.id
-	JOIN reactions r ON p.id = r.post_id
-	WHERE r.user_id = ? AND r.type = 1
-	ORDER BY r.id DESC`
-
-	rows, err := m.DB.Query(statement, userID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	var posts []*Post
-	for rows.Next() {
-		post := &Post{}
-		err := rows.Scan(
-			&post.ID, &post.Title, &post.Content, &post.AuthorID, &post.Username,
-			&post.CreatedAt, &post.LastModified,
-		)
-		if err != nil {
-			return nil, err
-		}
-
-		categories, err := m.getCategoriesForPost(post.ID)
-		if err != nil {
-			return nil, err
-		}
-		post.Categories = categories
-
-		posts = append(posts, post)
+		posts = append(posts, &post)
 	}
 
 	if err = rows.Err(); err != nil {

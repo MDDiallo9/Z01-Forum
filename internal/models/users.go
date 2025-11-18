@@ -127,3 +127,34 @@ func (m *UsersModel) Authenticate(emailOrUsername, password string) (string, err
 
 	return id, nil
 }
+
+func (m *UsersModel) GetByEmail(email string) (*User, error) {
+	user := &User{}
+	statement := `SELECT id, username, email, password, avatar, role FROM users WHERE email = ?`
+	err := m.DB.QueryRow(statement, email).Scan(&user.ID, &user.Username, &user.Email, &user.Password, &user.Avatar, &user.Role)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, ErrNoRecords
+		}
+		return nil, err
+	}
+	return user, nil
+}
+
+func (m *UsersModel) CreateOAuthUser(username, email, avatar string) (string, error) {
+	UUID := uuid.New().String()
+	// For OAuth users, we can set a placeholder password or handle it differently.
+	// Here we set a random unusable password hash.
+	hashedPw := "oauth_user_no_password"
+
+	statement := `INSERT INTO users (id, username, email, password, avatar, role) VALUES (?, ?, ?, ?, ?, ?)`
+	_, err := m.DB.Exec(statement, UUID, username, email, hashedPw, avatar, RoleNormal)
+	if err != nil {
+		var sqliteErr sqlite3.Error
+		if errors.As(err, &sqliteErr) && sqliteErr.ExtendedCode == sqlite3.ErrConstraintUnique {
+			return "", ErrDuplicateRecord
+		}
+		return "", err
+	}
+	return UUID, nil
+}
