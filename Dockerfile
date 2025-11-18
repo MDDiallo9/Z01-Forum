@@ -1,11 +1,14 @@
 # --- Stage 1: The Builder ---
 # This stage compiles the Go application
-FROM golang:latest AS builder
+FROM golang:alpine AS builder
 
 # Set necessary environment variables
 WORKDIR /app
 ENV CGO_ENABLED=1
 ENV GOOS=linux
+
+# Install build dependencies (gcc, musl-dev) required for go-sqlite3
+RUN apk add --no-cache build-base
 
 # Copy and download dependencies
 COPY go.mod go.sum ./
@@ -16,7 +19,7 @@ COPY . .
 
 # Build the application into a single static binary.
 # The -ldflags="-w -s" strips debug information, making the binary smaller.
-RUN go build -ldflags="-w -s" -o /go-app .
+RUN go build -ldflags="-w -s" -o /go-app ./cmd/forum/main.go
 
 # --- Stage 2: The Final Image ---
 # This stage creates the tiny production image
@@ -30,6 +33,10 @@ WORKDIR /app
 
 # Copy the compiled binary from the 'builder' stage
 COPY --from=builder /go-app .
+
+# Copy necessary directories (templates, static files, migrations)
+COPY --from=builder /app/ui ./ui
+COPY --from=builder /app/migrations ./migrations
 
 # Create a directory for the SQLite database file. This is where we will mount our volume.
 RUN mkdir /app/data
