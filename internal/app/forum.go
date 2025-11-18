@@ -14,13 +14,18 @@ type Application struct {
 	Categories   *models.CategoriesModel
 	Attachments  *models.AttachmentsModel
 	Reports      *models.ReportsModel
+	Likes        *models.LikesModel
+	Comments     *models.CommentsModel
 	Sessions     *services.SessionManager
 	TemplateData TemplateData
 }
 
 type TemplateData struct {
-	Form    any
-	Reports []*models.Report
+	Form            any
+	Reports         []*models.Report
+	IsAuthenticated bool
+	CurrentUserID   string
+	IsAdmin         bool
 }
 
 func NewApplication(
@@ -31,6 +36,8 @@ func NewApplication(
 	categories *models.CategoriesModel,
 	attachments *models.AttachmentsModel,
 	reports *models.ReportsModel,
+	likes *models.LikesModel,
+	comments *models.CommentsModel,
 	sessions *services.SessionManager,
 ) *Application {
 	return &Application{
@@ -41,6 +48,8 @@ func NewApplication(
 		Categories:  categories,
 		Attachments: attachments,
 		Reports:     reports,
+		Likes:       likes,
+		Comments:    comments,
 		Sessions:    sessions,
 	}
 }

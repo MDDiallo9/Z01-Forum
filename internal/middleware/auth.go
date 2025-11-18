@@ -43,6 +43,24 @@ func AuthRequired(sessions SessionManager, userModel *models.UsersModel) func(ht
 	}
 }
 
+// LoadSession checks for a session and loads the user if present, but doesn't require it.
+func LoadSession(sessions SessionManager, userModel *models.UsersModel) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			userID, err := sessions.GetUserFromRequest(r)
+			if err == nil && userID != "" {
+				user, err := userModel.Get(userID)
+				if err == nil {
+					ctx := context.WithValue(r.Context(), ContextKeyUser, user)
+					next.ServeHTTP(w, r.WithContext(ctx))
+					return
+				}
+			}
+			next.ServeHTTP(w, r)
+		})
+	}
+}
+
 // AUTHORIZATIONS
 // RequireModerator checks if the user is a moderator or not
 func RequireModerator(next http.Handler) http.Handler {

@@ -11,17 +11,30 @@ import (
 )
 
 type postForm struct {
-	Title       string
-	Content     string
-	Author_id   string
-	Category_id int
-	FieldErrors map[string]string
+	Title        string
+	Content      string
+	Author_id    string
+	Category_ids []int
+	FieldErrors  map[string]string
 	app.Validator
 }
 
 func CreatePostPage(f *app.Application) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		render(w, r, f, "create_post.html", nil)
+		// Fetch categories to display in the form
+		categories, err := f.Categories.ListAll()
+		if err != nil {
+			f.ErrorLog.Printf("Error fetching categories: %v", err)
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			return
+		}
+
+		type PageData struct {
+			Categories []*models.Category
+			Form       *postForm
+		}
+
+		render(w, r, f, "create_post.html", &app.TemplateData{Form: &PageData{Categories: categories, Form: &postForm{}}})
 	}
 }
 
@@ -47,25 +60,43 @@ func CreatePost(f *app.Application) http.HandlerFunc {
 			Title:   r.PostForm.Get("title"),
 			Content: r.PostForm.Get("content"),
 			// Realistically, Author_id isn't goten from the form, but from the authenticated user (sessions)
-			Author_id:   currentUser.ID,
-			Category_id: 0,
+			Author_id: currentUser.ID,
 		}
-		form.Category_id, _ = strconv.Atoi(r.PostForm.Get("category_id"))
+
+		// Parse categories
+		// r.PostForm["categories"] should give a slice of strings if multiple checkboxes have name="categories"
+		catStrings := r.PostForm["categories"]
+		for _, catStr := range catStrings {
+			catID, err := strconv.Atoi(catStr)
+			if err == nil {
+				form.Category_ids = append(form.Category_ids, catID)
+			}
+		}
 
 		form.CheckField(app.NotBlank(form.Title), "title", "This field cannot be blank")
 		form.CheckField(app.MaxChars(form.Title, 30), "title", "Title cannot exceed 30 chars")
 		form.CheckField(app.NotBlank(form.Content), "content", "This field cannot be blank")
 		form.CheckField(app.MaxChars(form.Content, 1000), "content", "Content cannot exceed 1000 chars")
-		// TODO : Add more tests
+		if len(form.Category_ids) == 0 {
+			form.AddFieldError("categories", "At least one category must be selected")
+		}
 
 		if !form.Valid() {
 			form.FieldErrors = form.Validator.FieldErrors
-			data := &app.TemplateData{Form: form}
-			render(w, r, f, "posts.html", data)
+
+			// Re-fetch categories for re-rendering
+			categories, _ := f.Categories.ListAll()
+			type PageData struct {
+				Categories []*models.Category
+				Form       *postForm
+			}
+
+			data := &app.TemplateData{Form: &PageData{Categories: categories, Form: form}}
+			render(w, r, f, "create_post.html", data)
 			return
 		}
 
-		id, err := f.Posts.CreateNewPostDB(form.Title, form.Content, form.Author_id, form.Category_id)
+		id, err := f.Posts.CreateNewPostDB(form.Title, form.Content, form.Author_id, form.Category_ids)
 		if err != nil {
 			if errors.Is(err, models.ErrDuplicateRecord) {
 
@@ -107,7 +138,8 @@ func CreatePost(f *app.Application) http.HandlerFunc {
 		}
 
 		f.InfoLog.Printf("New post created with ID: %v", id)
-		w.Write([]byte("Post successful!"))
+		// w.Write([]byte("Post successful!"))
+		http.Redirect(w, r, "/", http.StatusSeeOther)
 
 	}
 }
@@ -195,22 +227,40 @@ func UpdatePost(f *app.Application) http.HandlerFunc {
 			Content:   r.PostForm.Get("content"),
 			Author_id: r.PostForm.Get("author_id"),
 		}
-		form.Category_id, _ = strconv.Atoi(r.PostForm.Get("category_id"))
+
+		// Parse categories
+		catStrings := r.PostForm["categories"]
+		for _, catStr := range catStrings {
+			catID, err := strconv.Atoi(catStr)
+			if err == nil {
+				form.Category_ids = append(form.Category_ids, catID)
+			}
+		}
 
 		form.CheckField(app.NotBlank(form.Title), "title", "This field cannot be blank")
 		form.CheckField(app.MaxChars(form.Title, 30), "title", "Title cannot exceed 30 chars")
 		form.CheckField(app.NotBlank(form.Content), "content", "This field cannot be blank")
 		form.CheckField(app.MaxChars(form.Title, 1000), "title", "Title cannot exceed 1000 chars")
-		// TODO : Add more tests
+		if len(form.Category_ids) == 0 {
+			form.AddFieldError("categories", "At least one category must be selected")
+		}
 
 		if !form.Valid() {
 			form.FieldErrors = form.Validator.FieldErrors
-			data := &app.TemplateData{Form: form}
-			render(w, r, f, "posts.html", data)
+
+			// Re-fetch categories for re-rendering
+			categories, _ := f.Categories.ListAll()
+			type PageData struct {
+				Categories []*models.Category
+				Form       *postForm
+			}
+
+			data := &app.TemplateData{Form: &PageData{Categories: categories, Form: form}}
+			render(w, r, f, "post.html", data)
 			return
 		}
 
-		err = f.Posts.UpdatePostDB(form.Title, form.Content, form.Author_id, form.Category_id, id)
+		err = f.Posts.UpdatePostDB(form.Title, form.Content, form.Author_id, form.Category_ids, id)
 		if err != nil {
 			if errors.Is(err, models.ErrNoRecords) {
 				http.Error(w, "Post not found", http.StatusNotFound)
@@ -228,5 +278,89 @@ func UpdatePost(f *app.Application) http.HandlerFunc {
 		f.InfoLog.Printf("Updated post #%d", id)
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("Post updated successfully"))
+	}
+}
+
+func GetPost(f *app.Application) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		id, err := strconv.Atoi(r.PathValue("id"))
+		if err != nil {
+			http.Error(w, "Invalid post ID", http.StatusBadRequest)
+			return
+		}
+
+		post, err := f.Posts.Get(id)
+		if err != nil {
+			if errors.Is(err, models.ErrNoRecords) {
+				http.NotFound(w, r)
+			} else {
+				f.ErrorLog.Printf("Error fetching post #%d: %v", id, err)
+				http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			}
+			return
+		}
+
+		comments, err := f.Comments.GetByPostID(id)
+		if err != nil {
+			f.ErrorLog.Printf("Error fetching comments for post #%d: %v", id, err)
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			return
+		}
+
+		type PageData struct {
+			Post     *models.Post
+			Comments []*models.Comment
+		}
+
+		data := &app.TemplateData{
+			Form: &PageData{
+				Post:     post,
+				Comments: comments,
+			},
+		}
+
+		render(w, r, f, "post.html", data)
+	}
+}
+
+func CategoryPosts(f *app.Application) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		id, err := strconv.Atoi(r.PathValue("id"))
+		if err != nil {
+			http.Error(w, "Invalid category ID", http.StatusBadRequest)
+			return
+		}
+
+		// Fetch posts for this category
+		posts, err := f.Posts.ListByCategory(id, 100) // Limit 100 for now
+		if err != nil {
+			f.ErrorLog.Printf("Error fetching posts for category #%d: %v", id, err)
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			return
+		}
+
+		// Fetch all categories for the sidebar
+		categories, err := f.Categories.ListAll()
+		if err != nil {
+			f.ErrorLog.Printf("Error fetching categories: %v", err)
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			return
+		}
+
+		type PageData struct {
+			Posts      []*models.Post
+			Categories []*models.Category
+			CurrentCat int
+		}
+
+		data := &app.TemplateData{
+			Form: &PageData{
+				Posts:      posts,
+				Categories: categories,
+				CurrentCat: id,
+			},
+		}
+
+		render(w, r, f, "home.html", data)
 	}
 }

@@ -92,10 +92,16 @@ func Register(f *app.Application) http.HandlerFunc {
 			return
 		}
 
-		// TODO Session Management and Cookie
+		// Create a session for the new user
+		err = f.Sessions.CreateSession(w, r, uuid)
+		if err != nil {
+			f.ErrorLog.Printf("Session creation failed: %v", err)
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			return
+		}
 
 		f.InfoLog.Printf("New user registered with UUID: %s", uuid)
-		w.Write([]byte("Registration successful!"))
+		http.Redirect(w, r, "/", http.StatusSeeOther)
 	}
 }
 

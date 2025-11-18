@@ -2,21 +2,39 @@ package handlers
 
 import (
 	"forum/internal/app"
-	"log"
+	"forum/internal/models"
 	"net/http"
 )
 
 func Home(f *app.Application) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		if f.InfoLog != nil {
-			f.InfoLog.Println("home page")
-		}
-		test, err := f.Users.Register("Cudder", "bla@bla.col", "fsdfdsf", "avatar.jpg", 1)
+		posts, err := f.Posts.ListRandom(10) // Fetch 10 random posts for the feed
 		if err != nil {
-			log.Println(err)
+			f.ErrorLog.Printf("Error fetching posts: %v", err)
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			return
 		}
-		log.Println(test)
-		w.Write([]byte("Welcome to the Forum!"))
+
+		categories, err := f.Categories.ListAll()
+		if err != nil {
+			f.ErrorLog.Printf("Error fetching categories: %v", err)
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			return
+		}
+
+		type PageData struct {
+			Posts      []*models.Post
+			Categories []*models.Category
+		}
+
+		data := &app.TemplateData{
+			Form: &PageData{
+				Posts:      posts,
+				Categories: categories,
+			},
+		}
+
+		render(w, r, f, "home.html", data)
 	}
 }
 

@@ -5,6 +5,8 @@ package handlers
 import (
 	"fmt"
 	"forum/internal/app"
+	"forum/internal/middleware"
+	"forum/internal/models"
 	"html/template"
 	"net/http"
 )
@@ -28,6 +30,20 @@ func render(w http.ResponseWriter, r *http.Request, f *app.Application, page str
 		td = data[0]
 	} else {
 		td = &app.TemplateData{}
+	}
+
+	// Check if user is authenticated
+	// The original instruction had `if data != nil` and then `data.IsAuthenticated` etc.
+	// This was syntactically incorrect as `data` is `...*app.TemplateData` (a slice).
+	// It's assumed the intention was to modify the `td` variable, which is the actual
+	// *app.TemplateData instance being passed to the template.
+	if r.Context().Value(middleware.ContextKeyUser) != nil {
+		currentUser, ok := r.Context().Value(middleware.ContextKeyUser).(*models.User)
+		if ok && currentUser != nil {
+			td.IsAuthenticated = true
+			td.CurrentUserID = currentUser.ID
+			td.IsAdmin = (currentUser.Role == models.RoleAdmin || currentUser.Role == models.RoleModerator)
+		}
 	}
 
 	err = ts.ExecuteTemplate(w, "base", td)
