@@ -7,6 +7,12 @@ import (
 	"strconv"
 )
 
+func AdminDashboard(f *app.Application) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		render(w, r, f, "admin.html", nil)
+	}
+}
+
 func ListReports(f *app.Application) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		status := r.URL.Query().Get("status")

@@ -50,7 +50,7 @@ func Routes(f *app.Application) *http.ServeMux {
 	mux.Handle("GET /post/create", auth(CreatePostPage(f)))
 	mux.Handle("POST /post/create", auth(CreatePost(f)))
 	mux.Handle("GET /post/{id}", auth(GetPost(f)))
-	mux.Handle("DELETE /post/delete/{id}", auth(DeletePost(f)))
+	mux.Handle("POST /post/{id}/delete", auth(DeletePost(f)))
 	mux.Handle("GET /post/{id}/update", auth(EditPostPage(f)))
 	mux.Handle("POST /post/{id}/update", auth(UpdatePost(f)))
 	mux.Handle("GET /logout", auth(LogoutPopUp(f)))
@@ -78,6 +78,8 @@ func Routes(f *app.Application) *http.ServeMux {
 	mux.Handle("POST /notifications/read", auth(MarkNotificationRead(f)))
 
 	// ADMIN ONLY ROUTES
+	mux.Handle("GET /admin", adminOnly(AdminDashboard(f)))
+
 	// User Management
 	// We use PUT for the updates
 	mux.Handle("PUT /admin/users/{id}/promote", adminOnly(PromoteUser(f)))
