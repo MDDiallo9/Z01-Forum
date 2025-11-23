@@ -1,0 +1,8 @@
+forum
+forum.db
+*.pem
+cookies.txt
+test_image.png
+ui/templates/static/posts/*.jpeg
+ui/templates/static/posts/*.jpg
+ui/templates/static/posts/*.png
