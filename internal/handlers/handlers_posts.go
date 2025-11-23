@@ -112,12 +112,13 @@ func CreatePost(f *app.Application) http.HandlerFunc {
 			}
 			defer file.Close()
 
-			imageURL, err = app.UploadImage(file, *files[0], "posts") // Save to a 'posts' subdirectory
+			filename, err := app.UploadImage(file, *files[0], "posts") // Save to a 'posts' subdirectory
 			if err != nil {
 				f.ErrorLog.Printf("Error saving uploaded file: %v", err)
 				http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 				return
 			}
+			imageURL = "/static/posts/" + filename
 		}
 
 		post := models.Post{
@@ -190,8 +191,7 @@ func DeletePost(f *app.Application) http.HandlerFunc {
 		}
 
 		f.InfoLog.Printf("Deleted post #%d from database", id)
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("Post deleted successfully"))
+		http.Redirect(w, r, "/", http.StatusSeeOther)
 	}
 }
 
