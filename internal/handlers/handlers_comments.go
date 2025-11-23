@@ -60,6 +60,13 @@ func CreateComment(f *app.Application) http.HandlerFunc {
 			f.Notifications.Create(post.AuthorID, currentUser.ID, "comment", &postIDInt, nil) // Assuming 'user.ID' refers to 'currentUser.ID'
 		}
 
+		// Update post last modified time
+		err = f.Posts.UpdateLastModified(postID)
+		if err != nil {
+			f.ErrorLog.Printf("Error updating post last modified time: %v", err)
+			// Don't fail the request, just log it
+		}
+
 		// Original redirect was to Referer
 		// The provided snippet redirects to fmt.Sprintf("/post/%d", postID)
 		http.Redirect(w, r, fmt.Sprintf("/post/%d", postID), http.StatusSeeOther)

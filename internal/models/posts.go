@@ -109,7 +109,7 @@ func (m *PostsModel) ListAll() ([]*Post, error) {
 		(SELECT COUNT(*) FROM comments WHERE post_id = p.id) as comments
 		FROM posts p
 		JOIN users u ON p.author_id = u.id
-		ORDER BY p.created_at DESC
+		ORDER BY COALESCE(p.last_modified, p.created_at) DESC
 	`
 	rows, err := m.DB.Query(query)
 	if err != nil {
@@ -149,6 +149,12 @@ func (m *PostsModel) ListAll() ([]*Post, error) {
 		posts = append(posts, &post)
 	}
 	return posts, nil
+}
+
+func (m *PostsModel) UpdateLastModified(postID int) error {
+	statement := `UPDATE posts SET last_modified = datetime('now') WHERE id = ?`
+	_, err := m.DB.Exec(statement, postID)
+	return err
 }
 
 func (m *PostsModel) ListByAuthor(authorID string) ([]*Post, error) {

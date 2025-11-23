@@ -8,7 +8,7 @@ import (
 
 func Home(f *app.Application) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		posts, err := f.Posts.ListRandom(10) // Fetch 10 random posts for the feed
+		posts, err := f.Posts.ListAll() // Fetch all posts sorted by activity
 		if err != nil {
 			f.ErrorLog.Printf("Error fetching posts: %v", err)
 			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
