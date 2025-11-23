@@ -147,7 +147,7 @@ func Logout(f *app.Application) http.HandlerFunc {
 		err := f.Sessions.DestroySession(w, r)
 		if err != nil {
 			// Even if destroying the session fails, we still redirect user away from the protected route
-			f.ErrorLog.Printf(err.Error())
+			f.ErrorLog.Printf("%v", err)
 		}
 		// Redirect to the homepage after logout. Useer can peruse and chill there.
 		http.Redirect(w, r, "/", http.StatusSeeOther)
