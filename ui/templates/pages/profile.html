@@ -2,7 +2,7 @@
 <div class="container" style="max-width: 800px; margin: 0 auto;">
     <div class="profile-header" style="background: white; padding: 2rem; border-radius: var(--radius); box-shadow: var(--shadow); margin-bottom: 2rem; text-align: center;">
         <div class="avatar-large" style="width: 80px; height: 80px; border-radius: 50%; background: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%); display: flex; align-items: center; justify-content: center; font-weight: 700; color: var(--primary); font-size: 2rem; margin: 0 auto 1rem;">
-            U
+            {{printf "%.2s" .Form.User.Username}}
         </div>
         <h1 style="margin-bottom: 0.5rem;">My Profile</h1>
         <p style="color: var(--text-muted);">Manage your activity and settings</p>
@@ -30,7 +30,7 @@
                 {{range .Form.Form}}
                 <div class="card" style="padding: 1.5rem;">
                     <div class="post-header" style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
-                        <div class="avatar" style="width: 32px; height: 32px; font-size: 0.8rem; border-radius: 50%; background: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%); display: flex; align-items: center; justify-content: center; font-weight: 700; color: var(--primary);">{{slice .Username 0 2}}</div>
+                        <div class="avatar" style="width: 32px; height: 32px; font-size: 0.8rem; border-radius: 50%; background: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%); display: flex; align-items: center; justify-content: center; font-weight: 700; color: var(--primary);">{{printf "%.2s" .Username}}</div>
                         <div class="post-meta" style="display: flex; flex-direction: column;">
                             <div class="username" style="font-weight: 600; font-size: 0.85rem;">{{.Username}}</div>
                             <div class="timestamp" style="font-size: 0.75rem; color: var(--text-muted);">{{.CreatedAt.Format "Jan 02, 2006 15:04"}}</div>
@@ -52,9 +52,9 @@
                 {{range .Form.Form}}
                 <article class="card">
                     <div class="post-header" style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem;">
-                        <div class="avatar" style="width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%); display: flex; align-items: center; justify-content: center; font-weight: 700; color: var(--primary);">{{slice .Username 0 2}}</div>
+                        <div class="avatar" style="width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%); display: flex; align-items: center; justify-content: center; font-weight: 700; color: var(--primary);">{{printf "%.2s" .AuthorName}}</div>
                         <div class="post-meta" style="display: flex; flex-direction: column;">
-                            <div class="username" style="font-weight: 600; font-size: 0.95rem;">{{.Username}}</div>
+                            <div class="username" style="font-weight: 600; font-size: 0.95rem;">{{.AuthorName}}</div>
                             <div class="timestamp" style="font-size: 0.8rem; color: var(--text-muted);">{{.CreatedAt.Format "Jan 02, 2006 15:04"}}</div>
                         </div>
                     </div>

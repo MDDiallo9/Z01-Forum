@@ -26,12 +26,15 @@ func UserCreatedPosts(f *app.Application) http.HandlerFunc {
 			Form         []*models.Post
 			IsUserPosts  bool
 			IsLikedPosts bool
+			IsComments   bool
+			User         *models.User
 		}
 
 		data := &app.TemplateData{
 			Form: &ProfileData{
 				Form:        posts,
 				IsUserPosts: true,
+				User:        currentUser,
 			},
 		}
 
@@ -58,12 +61,15 @@ func UserLikedPosts(f *app.Application) http.HandlerFunc {
 			Form         []*models.Post
 			IsUserPosts  bool
 			IsLikedPosts bool
+			IsComments   bool
+			User         *models.User
 		}
 
 		data := &app.TemplateData{
 			Form: &ProfileData{
 				Form:         posts,
 				IsLikedPosts: true,
+				User:         currentUser,
 			},
 		}
 
@@ -91,12 +97,14 @@ func UserComments(f *app.Application) http.HandlerFunc {
 			IsUserPosts  bool
 			IsLikedPosts bool
 			IsComments   bool
+			User         *models.User
 		}
 
 		data := &app.TemplateData{
 			Form: &ProfileData{
 				Form:       comments,
 				IsComments: true,
+				User:       currentUser,
 			},
 		}
 
