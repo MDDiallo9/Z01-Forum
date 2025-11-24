@@ -16,6 +16,7 @@ type Post struct {
 	AuthorName   string       `json:"username"`
 	ImageURL     string       `json:"imageUrl"`
 	Categories   []int        `json:"categories"`
+	CategoryList []Category   `json:"categoryList"`
 	CreatedAt    time.Time    `json:"createdAt"`
 	LastModified sql.NullTime `json:"lastModified"`
 	LikeCount    int          `json:"likeCount"`
@@ -83,19 +84,13 @@ func (m *PostsModel) Get(id int) (*Post, error) {
 	}
 
 	// Fetch categories
-	catQuery := `SELECT category_id FROM post_categories WHERE post_id = ?`
-	rows, err := m.DB.Query(catQuery, id)
+	post.Categories, err = m.getCategoriesForPost(id)
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
-
-	for rows.Next() {
-		var catID int
-		if err := rows.Scan(&catID); err != nil {
-			return nil, err
-		}
-		post.Categories = append(post.Categories, catID)
+	post.CategoryList, err = m.getCategoryObjectsForPost(id)
+	if err != nil {
+		return nil, err
 	}
 
 	return &post, nil
@@ -135,16 +130,9 @@ func (m *PostsModel) ListAll() ([]*Post, error) {
 		}
 
 		// Fetch categories (N+1 problem, but acceptable for small scale)
-		catQuery := `SELECT category_id FROM post_categories WHERE post_id = ?`
-		catRows, err := m.DB.Query(catQuery, post.ID)
-		if err == nil {
-			for catRows.Next() {
-				var catID int
-				catRows.Scan(&catID)
-				post.Categories = append(post.Categories, catID)
-			}
-			catRows.Close()
-		}
+		// Fetch categories (N+1 problem, but acceptable for small scale)
+		post.Categories, _ = m.getCategoriesForPost(post.ID)
+		post.CategoryList, _ = m.getCategoryObjectsForPost(post.ID)
 
 		posts = append(posts, &post)
 	}
@@ -192,16 +180,9 @@ func (m *PostsModel) ListByAuthor(authorID string) ([]*Post, error) {
 		}
 
 		// Fetch categories
-		catQuery := `SELECT category_id FROM post_categories WHERE post_id = ?`
-		catRows, err := m.DB.Query(catQuery, post.ID)
-		if err == nil {
-			for catRows.Next() {
-				var catID int
-				catRows.Scan(&catID)
-				post.Categories = append(post.Categories, catID)
-			}
-			catRows.Close()
-		}
+		// Fetch categories
+		post.Categories, _ = m.getCategoriesForPost(post.ID)
+		post.CategoryList, _ = m.getCategoryObjectsForPost(post.ID)
 
 		posts = append(posts, &post)
 	}
@@ -244,16 +225,9 @@ func (m *PostsModel) ListLikedByUser(userID string) ([]*Post, error) {
 		}
 
 		// Fetch categories
-		catQuery := `SELECT category_id FROM post_categories WHERE post_id = ?`
-		catRows, err := m.DB.Query(catQuery, post.ID)
-		if err == nil {
-			for catRows.Next() {
-				var catID int
-				catRows.Scan(&catID)
-				post.Categories = append(post.Categories, catID)
-			}
-			catRows.Close()
-		}
+		// Fetch categories
+		post.Categories, _ = m.getCategoriesForPost(post.ID)
+		post.CategoryList, _ = m.getCategoryObjectsForPost(post.ID)
 
 		posts = append(posts, &post)
 	}
@@ -357,6 +331,12 @@ func (m *PostsModel) ListRandom(limit int) ([]*Post, error) {
 		}
 		post.Categories = categories
 
+		catObjects, err := m.getCategoryObjectsForPost(post.ID)
+		if err != nil {
+			return nil, err
+		}
+		post.CategoryList = catObjects
+
 		posts = append(posts, &post)
 	}
 
@@ -410,6 +390,12 @@ func (m *PostsModel) ListByCategory(categoryID int, limit int) ([]*Post, error) 
 		}
 		post.Categories = categories
 
+		catObjects, err := m.getCategoryObjectsForPost(post.ID)
+		if err != nil {
+			return nil, err
+		}
+		post.CategoryList = catObjects
+
 		posts = append(posts, &post)
 	}
 
@@ -434,6 +420,29 @@ func (m *PostsModel) getCategoriesForPost(postID int) ([]int, error) {
 			return nil, err
 		}
 		categories = append(categories, catID)
+	}
+	return categories, nil
+}
+
+func (m *PostsModel) getCategoryObjectsForPost(postID int) ([]Category, error) {
+	rows, err := m.DB.Query(`
+		SELECT c.id, c.name 
+		FROM categories c
+		JOIN post_categories pc ON c.id = pc.category_id
+		WHERE pc.post_id = ?
+	`, postID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var categories []Category
+	for rows.Next() {
+		var cat Category
+		if err := rows.Scan(&cat.ID, &cat.Name); err != nil {
+			return nil, err
+		}
+		categories = append(categories, cat)
 	}
 	return categories, nil
 }

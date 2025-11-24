@@ -35,9 +35,9 @@
             </p>
             <div class="post-footer" style="display: flex; justify-content: space-between; align-items: center; padding-top: 1rem; border-top: 1px solid var(--border);">
                 <div class="tags" style="display: flex; gap: 0.5rem;">
-                    <!-- We need to fetch categories for each post. Assuming .Categories is a list of IDs or names attached to Post struct -->
-                    <!-- For now, placeholder or if we updated Post struct to include Category objects -->
-                    <span class="tag" style="font-size: 0.75rem; padding: 0.25rem 0.75rem; background: #f1f5f9; color: var(--text-muted); border-radius: 999px; font-weight: 600;">Post #{{.ID}}</span>
+                    {{range .CategoryList}}
+                    <a href="/categories/{{.ID}}" class="tag" style="font-size: 0.75rem; padding: 0.25rem 0.75rem; background: #f1f5f9; color: var(--text-muted); border-radius: 999px; font-weight: 600; text-decoration: none; transition: background 0.2s;">{{.Name}}</a>
+                    {{end}}
                 </div>
                 <div class="actions" style="display: flex; gap: 1rem;">
                     <form action="/post/{{.ID}}/like" method="POST" style="display: inline;">
