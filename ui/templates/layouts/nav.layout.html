@@ -67,7 +67,7 @@
         <div class="nav-auth">
             {{if .IsAuthenticated}}
                 <a href="/post/create" class="btn btn-primary">New Post</a>
-                <form action="/auth/logout" method="POST" style="display: inline;">
+                <form action="/logout" method="POST" style="display: inline;">
                     <button type="submit" class="btn btn-ghost">Logout</button>
                 </form>
             {{else}}
