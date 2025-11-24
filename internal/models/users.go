@@ -158,3 +158,12 @@ func (m *UsersModel) CreateOAuthUser(username, email, avatar string) (string, er
 	}
 	return UUID, nil
 }
+
+func (m *UsersModel) Count() (int, error) {
+	var count int
+	err := m.DB.QueryRow("SELECT COUNT(*) FROM users").Scan(&count)
+	if err != nil {
+		return 0, err
+	}
+	return count, nil
+}

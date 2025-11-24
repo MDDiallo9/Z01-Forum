@@ -27,7 +27,6 @@ FROM alpine:latest
 
 # It's good practice to run as a non-root user
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup
-USER appuser
 
 WORKDIR /app
 
@@ -37,9 +36,18 @@ COPY --from=builder /go-app .
 # Copy necessary directories (templates, static files, migrations)
 COPY --from=builder /app/ui ./ui
 COPY --from=builder /app/migrations ./migrations
+COPY --from=builder /app/cert.pem .
+COPY --from=builder /app/key.pem .
+
+# Create upload directories and set permissions
+RUN mkdir -p /app/ui/templates/static/posts /app/ui/templates/static/avatars && \
+    chown -R appuser:appgroup /app/ui
 
 # Create a directory for the SQLite database file. This is where we will mount our volume.
-RUN mkdir /app/data
+RUN mkdir /app/data && chown -R appuser:appgroup /app/data
+
+# Switch to non-root user
+USER appuser
 
 # Expose the port
 EXPOSE 8000

@@ -446,3 +446,12 @@ func (m *PostsModel) getCategoryObjectsForPost(postID int) ([]Category, error) {
 	}
 	return categories, nil
 }
+
+func (m *PostsModel) Count() (int, error) {
+	var count int
+	err := m.DB.QueryRow("SELECT COUNT(*) FROM posts").Scan(&count)
+	if err != nil {
+		return 0, err
+	}
+	return count, nil
+}

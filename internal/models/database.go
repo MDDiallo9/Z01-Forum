@@ -11,7 +11,7 @@ import (
 var DB *sql.DB
 
 func InitDB() (*sql.DB, error) {
-	dbFile := "./forum.db"
+	dbFile := "./data/forum.db"
 	// Check if the database file exists
 	_, err := os.Stat(dbFile)
 	needsInit := os.IsNotExist(err)

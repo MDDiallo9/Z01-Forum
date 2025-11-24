@@ -22,15 +22,31 @@ func Home(f *app.Application) http.HandlerFunc {
 			return
 		}
 
+		userCount, err := f.Users.Count()
+		if err != nil {
+			f.ErrorLog.Printf("Error fetching user count: %v", err)
+			userCount = 0
+		}
+
+		postCount, err := f.Posts.Count()
+		if err != nil {
+			f.ErrorLog.Printf("Error fetching post count: %v", err)
+			postCount = 0
+		}
+
 		type PageData struct {
 			Posts      []*models.Post
 			Categories []*models.Category
+			UserCount  int
+			PostCount  int
 		}
 
 		data := &app.TemplateData{
 			Form: &PageData{
 				Posts:      posts,
 				Categories: categories,
+				UserCount:  userCount,
+				PostCount:  postCount,
 			},
 		}
 

@@ -59,7 +59,7 @@ func main() {
 	if err != nil {
 		// Fallback to HTTP if certs are missing (for development convenience, or error out)
 		log.Printf("Failed to start HTTPS server: %v. Falling back to HTTP.", err)
-		srv.Addr = ":8080" // Ensure port is correct for HTTP if needed, or keep same
+		srv.Addr = ":8000" // Ensure port is correct for HTTP if needed, or keep same
 		log.Printf("Starting Forum server on http://localhost%s\n", srv.Addr)
 		err = srv.ListenAndServe()
 		app.ErrorLog.Fatal(err)
