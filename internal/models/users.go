@@ -167,3 +167,15 @@ func (m *UsersModel) Count() (int, error) {
 	}
 	return count, nil
 }
+
+func (m *UsersModel) GetAvatar(username string) (string, error) {
+	var avatar string
+	err := m.DB.QueryRow("SELECT avatar FROM users WHERE username = ?", username).Scan(&avatar)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return "", ErrNoRecords
+		}
+		return "", err
+	}
+	return avatar, nil
+}
