@@ -8,8 +8,8 @@ import (
 	/* "errors"
 	"time" */
 	"github.com/google/uuid"
-	"github.com/mattn/go-sqlite3"
 	"golang.org/x/crypto/bcrypt"
+	sqlite3 "modernc.org/sqlite"
 )
 
 const (
@@ -90,8 +90,9 @@ func (m *UsersModel) Register(username, email, password, avatar string, role int
 
 	_, err = m.DB.Exec(statement, UUID, username, email, hashedPw, avatar, role)
 	if err != nil {
-		var sqliteErr sqlite3.Error
-		if errors.As(err, &sqliteErr) && sqliteErr.ExtendedCode == sqlite3.ErrConstraintUnique {
+		var sqliteErr *sqlite3.Error
+		// SQLITE_CONSTRAINT_UNIQUE = 2067
+		if errors.As(err, &sqliteErr) && sqliteErr.Code() == 2067 {
 			return "", ErrDuplicateRecord
 		}
 		return "", err
@@ -150,8 +151,8 @@ func (m *UsersModel) CreateOAuthUser(username, email, avatar string) (string, er
 	statement := `INSERT INTO users (id, username, email, password, avatar, role) VALUES (?, ?, ?, ?, ?, ?)`
 	_, err := m.DB.Exec(statement, UUID, username, email, hashedPw, avatar, RoleNormal)
 	if err != nil {
-		var sqliteErr sqlite3.Error
-		if errors.As(err, &sqliteErr) && sqliteErr.ExtendedCode == sqlite3.ErrConstraintUnique {
+		var sqliteErr *sqlite3.Error
+		if errors.As(err, &sqliteErr) && sqliteErr.Code() == 2067 {
 			return "", ErrDuplicateRecord
 		}
 		return "", err

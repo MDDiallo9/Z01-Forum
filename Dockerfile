@@ -19,7 +19,7 @@ COPY . .
 
 # Build the application into a single static binary.
 # The -ldflags="-w -s" strips debug information, making the binary smaller.
-RUN go build -ldflags="-w -s" -o /go-app ./cmd/forum/main.go
+RUN go build -ldflags="-w -s" -o /forum ./cmd/forum/main.go
 
 # --- Stage 2: The Final Image ---
 # This stage creates the tiny production image
@@ -31,7 +31,7 @@ RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 WORKDIR /app
 
 # Copy the compiled binary from the 'builder' stage
-COPY --from=builder /go-app .
+COPY --from=builder /forum .
 
 # Copy necessary directories (templates, static files, migrations)
 COPY --from=builder /app/ui ./ui
@@ -53,7 +53,7 @@ USER appuser
 EXPOSE 8000
 
 # This is the command that will run when the container starts
-CMD ["./go-app"]
+CMD ["./forum"]
 
 # Linking db file to the container
 # docker run -p 8000:8000 -v ./db-data:/app/data your-app-name

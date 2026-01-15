@@ -5,7 +5,7 @@ import (
 	"errors"
 	"time"
 
-	"github.com/mattn/go-sqlite3"
+	sqlite3 "modernc.org/sqlite"
 )
 
 type Post struct {
@@ -242,8 +242,8 @@ func (m *PostsModel) UpdatePostDB(title, content, author_id string, category_ids
 
 	result, err := m.DB.Exec(statement, title, content, author_id, id)
 	if err != nil {
-		var sqliteErr sqlite3.Error
-		if errors.As(err, &sqliteErr) && sqliteErr.ExtendedCode == sqlite3.ErrConstraintUnique {
+		var sqliteErr *sqlite3.Error
+		if errors.As(err, &sqliteErr) && sqliteErr.Code() == 2067 {
 			return ErrDuplicateRecord
 		}
 		return err
