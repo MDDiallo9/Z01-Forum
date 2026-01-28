@@ -16,8 +16,6 @@ func enableCORS(next http.Handler) http.Handler {
 }
 func Routes(f *app.Application) *http.ServeMux {
 	mux := http.NewServeMux()
-	fileServer := http.FileServer(http.Dir("./ui/templates/static"))
-	mux.Handle("/static/", http.StripPrefix("/static", fileServer))
 
 	// Create an instance of the authentication middleware
 	// Then pass f.Sessions because it meets the SessionManager perequisites
@@ -28,10 +26,10 @@ func Routes(f *app.Application) *http.ServeMux {
 	}
 
 	mux.Handle("GET /{$}", maybeAuth(Home(f)))
-	mux.Handle("GET /categories/{id}", maybeAuth(CategoryPosts(f)))
-	mux.Handle("GET /register", maybeAuth(RegisterPage(f)))
+	// mux.Handle("GET /categories/{id}", maybeAuth(CategoryPosts(f))) // Removed in favor of API
+	// mux.Handle("GET /register", maybeAuth(RegisterPage(f)))
 	mux.Handle("POST /register", maybeAuth(Register(f)))
-	mux.Handle("GET /login", maybeAuth(LoginPage(f)))
+	// mux.Handle("GET /login", maybeAuth(LoginPage(f)))
 	mux.Handle("POST /login", maybeAuth(Login(f)))
 
 	// OAuth Routes
@@ -47,18 +45,18 @@ func Routes(f *app.Application) *http.ServeMux {
 
 	// PROTECTED ROUTES ALL GO HERE FOLLOWING THE PATTERN
 	// Protected handler to test our sessions
-	mux.Handle("GET /post/create", auth(CreatePostPage(f)))
+	// mux.Handle("GET /post/create", auth(CreatePostPage(f)))
 	mux.Handle("POST /post/create", auth(CreatePost(f)))
 	mux.Handle("GET /post/{id}", auth(GetPost(f)))
 	mux.Handle("POST /post/{id}/delete", auth(DeletePost(f)))
-	mux.Handle("GET /post/{id}/update", auth(EditPostPage(f)))
+	// mux.Handle("GET /post/{id}/update", auth(EditPostPage(f)))
 	mux.Handle("POST /post/{id}/update", auth(UpdatePost(f)))
-	mux.Handle("GET /logout", auth(LogoutPopUp(f)))
+	// mux.Handle("GET /logout", auth(LogoutPopUp(f)))
 	mux.Handle("POST /logout", auth(Logout(f)))
 
 	// Report Creation Routes for only logged in users
 	mux.Handle("POST /posts/{id}/report", auth(CreateReport(f)))
-	mux.Handle("GET /posts/{id}/report", auth(CreateReportPage(f)))
+	// mux.Handle("GET /posts/{id}/report", auth(CreateReportPage(f)))
 
 	// Likes and Comments
 	mux.Handle("POST /post/{id}/like", auth(LikePost(f)))
@@ -78,7 +76,7 @@ func Routes(f *app.Application) *http.ServeMux {
 	mux.Handle("POST /notifications/read", auth(MarkNotificationRead(f)))
 
 	// ADMIN ONLY ROUTES
-	mux.Handle("GET /admin", adminOnly(AdminDashboard(f)))
+	// mux.Handle("GET /admin", adminOnly(AdminDashboard(f)))
 
 	// User Management
 	// We use PUT for the updates

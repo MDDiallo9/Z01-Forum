@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"encoding/json"
 	"errors"
 	"forum/internal/app"
 	"forum/internal/auth"
@@ -40,31 +41,30 @@ func Register(f *app.Application) http.HandlerFunc {
 		form.CheckField(app.NotBlank(form.Email), "email", "This field cannot be blank")
 		form.CheckField(app.ValidEmail(form.Email), "email", "Invalid Email format")
 		form.CheckField(app.NotBlank(form.Password), "password", "This field cannot be blank")
-		form.CheckField(app.MinChars(form.Password, 6), "password", "Minimum 8 characters")
+		form.CheckField(app.MinChars(form.Password, 6), "password", "Minimum 6 characters")
 		form.CheckField(app.IsIdentical(form.Password, confirmPassword), "password", "Passwords aren't identical")
 
 		if !form.Valid() {
-			form.FieldErrors = form.Validator.FieldErrors
-			data := &app.TemplateData{Form: form}
-			render(w, r, f, "register.html", data)
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusBadRequest)
+			json.NewEncoder(w).Encode(map[string]any{
+				"error":  "Validation failed",
+				"fields": form.FieldErrors,
+			})
 			return
 		}
 
 		// Avatar Upload
-
 		file, header, err := r.FormFile("avatar")
 		if err != nil {
-			// no file uploaded -> use default avatar
 			if err == http.ErrMissingFile {
 				form.Avatar = "default-avatar.jpg"
 			} else {
-				// real error reading the uploaded file
 				f.ErrorLog.Printf("error reading avatar file: %v", err)
 				form.Avatar = "default-avatar.jpg"
 			}
 		} else {
 			defer file.Close()
-			// user left the file input empty => filename may be empty
 			if header == nil || header.Filename == "" {
 				form.Avatar = "default-avatar.jpg"
 			} else {
@@ -79,21 +79,18 @@ func Register(f *app.Application) http.HandlerFunc {
 		uuid, err := f.Users.Register(form.Username, form.Email, form.Password, form.Avatar, 0)
 		if err != nil {
 			if errors.Is(err, models.ErrDuplicateRecord) {
-				// TODO Could add a box for this error instead of sticking it to a form field
-				form.AddFieldError("email", "An account with this email or username already exists")
-				form.AddFieldError("username", "An account with this email or username already exists")
-				form.FieldErrors = form.Validator.FieldErrors
-				data := &app.TemplateData{Form: form}
-				render(w, r, f, "register.html", data)
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(http.StatusConflict)
+				json.NewEncoder(w).Encode(map[string]string{
+					"error": "An account with this email or username already exists",
+				})
 				return
 			}
-
 			f.ErrorLog.Printf("User registration failed: %v", err)
 			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 			return
 		}
 
-		// Create a session for the new user
 		err = f.Sessions.CreateSession(w, r, uuid)
 		if err != nil {
 			f.ErrorLog.Printf("Session creation failed: %v", err)
@@ -102,7 +99,9 @@ func Register(f *app.Application) http.HandlerFunc {
 		}
 
 		f.InfoLog.Printf("New user registered with UUID: %s", uuid)
-		http.Redirect(w, r, "/", http.StatusSeeOther)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusCreated)
+		json.NewEncoder(w).Encode(map[string]string{"message": "User registered successfully", "user_id": uuid})
 	}
 }
 
@@ -135,10 +134,8 @@ func Login(f *app.Application) http.HandlerFunc {
 		}
 
 		f.InfoLog.Printf("User with ID %s logged in successfully", id)
-		// w.Write([]byte("Login successful!"))
-
-		// Redirect to home
-		http.Redirect(w, r, "/", http.StatusSeeOther)
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]string{"message": "Login successful", "user_id": id})
 	}
 }
 
@@ -146,11 +143,10 @@ func Logout(f *app.Application) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		err := f.Sessions.DestroySession(w, r)
 		if err != nil {
-			// Even if destroying the session fails, we still redirect user away from the protected route
 			f.ErrorLog.Printf("%v", err)
 		}
-		// Redirect to the homepage after logout. Useer can peruse and chill there.
-		http.Redirect(w, r, "/", http.StatusSeeOther)
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]string{"message": "Logged out successfully"})
 	}
 }
 

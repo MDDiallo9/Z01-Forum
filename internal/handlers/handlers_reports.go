@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"encoding/json"
 	"errors"
 	"forum/internal/app"
 	"forum/internal/middleware"
@@ -17,28 +18,19 @@ type reportForm struct {
 	app.Validator
 }
 
-func CreateReportPage(f *app.Application) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		render(w, r, f, "create_report.html", nil)
-	}
-}
-
 func CreateReport(f *app.Application) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		// Extract the user trying to make the report from context
 		currentUser, ok := r.Context().Value(middleware.ContextKeyUser).(*models.User)
 		if !ok {
 			http.Error(w, "Couldn't retrieve the current user", http.StatusInternalServerError)
 			return
 		}
 
-		// Check the role authorization
 		if currentUser.Role != models.RoleNormal && currentUser.Role != models.RoleModerator && currentUser.Role != models.RoleAdmin {
 			http.Error(w, "You do not have permission to make a report", http.StatusForbidden)
 			return
 		}
 
-		// Parse the report form details
 		err := r.ParseForm()
 		if err != nil {
 			f.ErrorLog.Println("Error parsing form", err)
@@ -46,17 +38,14 @@ func CreateReport(f *app.Application) http.HandlerFunc {
 		}
 
 		postIDStr := r.PathValue("id")
-		// userIDstr := r.FormValue("user_id")
 		reason := r.FormValue("reason")
 
-		// Convert the integer of post_id and user_id to strings
 		postID, err := strconv.Atoi(postIDStr)
 		if err != nil {
 			http.Error(w, "invalid post id in url", http.StatusBadRequest)
 			return
 		}
 
-		// Verify that the post actually exists
 		_, err = f.Posts.Get(postID)
 		if err != nil {
 			if errors.Is(err, models.ErrNoRecords) {
@@ -68,7 +57,6 @@ func CreateReport(f *app.Application) http.HandlerFunc {
 			return
 		}
 
-		// Assign form values
 		form := &reportForm{
 			PostID: postID,
 			UserID: currentUser.ID,
@@ -77,13 +65,15 @@ func CreateReport(f *app.Application) http.HandlerFunc {
 
 		form.CheckField(app.NotBlank(form.Reason), "reason", "This field cannot be blank")
 		if !form.Valid() {
-			form.FieldErrors = form.Validator.FieldErrors
-			data := &app.TemplateData{Form: form}
-			render(w, r, f, "create_report.html", data)
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusBadRequest)
+			json.NewEncoder(w).Encode(map[string]any{
+				"error":  "Validation failed",
+				"fields": form.FieldErrors,
+			})
 			return
 		}
 
-		// Create the report in DB
 		err = f.Reports.Create(form.PostID, form.UserID, form.Reason)
 		if err != nil {
 			f.ErrorLog.Printf("failed to create report: %v", err)
@@ -91,9 +81,9 @@ func CreateReport(f *app.Application) http.HandlerFunc {
 			return
 		}
 
-		// Response
 		f.InfoLog.Printf("User '%s' created a report on post #%d", currentUser.ID, form.PostID)
-		// Redirect user back to the post
-		http.Redirect(w, r, "/post/"+postIDStr, http.StatusSeeOther)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusCreated)
+		json.NewEncoder(w).Encode(map[string]string{"message": "Report created successfully"})
 	}
 }

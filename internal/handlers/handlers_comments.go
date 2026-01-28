@@ -1,8 +1,8 @@
 package handlers
 
 import (
+	"encoding/json"
 	"errors"
-	"fmt"
 	"forum/internal/app"
 	"forum/internal/middleware"
 	"forum/internal/models"
@@ -37,16 +37,8 @@ func CreateComment(f *app.Application) http.HandlerFunc {
 			return
 		}
 
-		// Original code used f.Comments.Create(content, currentUser.ID, postID)
-		// The provided snippet uses app.Comments.Create(content, postID, user.ID)
-		// Assuming 'app' refers to 'f' and 'user' refers to 'currentUser'
-		// Also, the order of arguments for Create might have changed in the user's system.
-		// I will use the arguments from the provided snippet: (content, postID, currentUser.ID)
 		_, err = f.Comments.Create(content, currentUser.ID, postID)
 		if err != nil {
-			// Original code used f.ErrorLog.Printf and http.Error
-			// The provided snippet uses app.serverError
-			// I will adapt to the existing error handling style using f.ErrorLog.Printf and http.Error
 			f.ErrorLog.Printf("Error creating comment: %v", err)
 			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 			return
@@ -56,8 +48,7 @@ func CreateComment(f *app.Application) http.HandlerFunc {
 		post, _ := f.Posts.Get(postID) // Assuming 'app.Posts' refers to 'f.Posts'
 		if post != nil {
 			postIDInt := post.ID
-			// Assuming 'app.Notifications' refers to 'f.Notifications'
-			f.Notifications.Create(post.AuthorID, currentUser.ID, "comment", &postIDInt, nil) // Assuming 'user.ID' refers to 'currentUser.ID'
+			f.Notifications.Create(post.AuthorID, currentUser.ID, "comment", &postIDInt, nil)
 		}
 
 		// Update post last modified time
@@ -67,9 +58,9 @@ func CreateComment(f *app.Application) http.HandlerFunc {
 			// Don't fail the request, just log it
 		}
 
-		// Original redirect was to Referer
-		// The provided snippet redirects to fmt.Sprintf("/post/%d", postID)
-		http.Redirect(w, r, fmt.Sprintf("/post/%d", postID), http.StatusSeeOther)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusCreated)
+		json.NewEncoder(w).Encode(map[string]string{"message": "Comment created successfully"})
 	}
 }
 
@@ -105,6 +96,7 @@ func DeleteComment(f *app.Application) http.HandlerFunc {
 			return
 		}
 
-		http.Redirect(w, r, fmt.Sprintf("/post/%d", comment.PostID), http.StatusSeeOther)
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]string{"message": "Comment deleted successfully"})
 	}
 }

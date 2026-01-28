@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"encoding/json"
 	"forum/internal/app"
 	"forum/internal/middleware"
 	"forum/internal/models"
@@ -22,23 +23,8 @@ func UserCreatedPosts(f *app.Application) http.HandlerFunc {
 			return
 		}
 
-		type ProfileData struct {
-			Form         []*models.Post
-			IsUserPosts  bool
-			IsLikedPosts bool
-			IsComments   bool
-			User         *models.User
-		}
-
-		data := &app.TemplateData{
-			Form: &ProfileData{
-				Form:        posts,
-				IsUserPosts: true,
-				User:        currentUser,
-			},
-		}
-
-		render(w, r, f, "profile.html", data)
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(posts)
 	}
 }
 
@@ -57,23 +43,8 @@ func UserLikedPosts(f *app.Application) http.HandlerFunc {
 			return
 		}
 
-		type ProfileData struct {
-			Form         []*models.Post
-			IsUserPosts  bool
-			IsLikedPosts bool
-			IsComments   bool
-			User         *models.User
-		}
-
-		data := &app.TemplateData{
-			Form: &ProfileData{
-				Form:         posts,
-				IsLikedPosts: true,
-				User:         currentUser,
-			},
-		}
-
-		render(w, r, f, "profile.html", data)
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(posts)
 	}
 }
 
@@ -92,22 +63,7 @@ func UserComments(f *app.Application) http.HandlerFunc {
 			return
 		}
 
-		type ProfileData struct {
-			Form         any
-			IsUserPosts  bool
-			IsLikedPosts bool
-			IsComments   bool
-			User         *models.User
-		}
-
-		data := &app.TemplateData{
-			Form: &ProfileData{
-				Form:       comments,
-				IsComments: true,
-				User:       currentUser,
-			},
-		}
-
-		render(w, r, f, "profile.html", data)
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(comments)
 	}
 }

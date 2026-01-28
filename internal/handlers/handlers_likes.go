@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"encoding/json"
 	"forum/internal/app"
 	"forum/internal/middleware"
 	"forum/internal/models"
@@ -78,6 +79,7 @@ func handleReaction(w http.ResponseWriter, r *http.Request, f *app.Application, 
 		}
 	}
 
-	// Redirect back to the page
-	http.Redirect(w, r, r.Header.Get("Referer"), http.StatusSeeOther)
+	// Response
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]string{"message": "Reaction updated successfully"})
 }

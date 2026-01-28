@@ -1,8 +1,8 @@
 package handlers
 
 import (
+	"encoding/json"
 	"errors"
-	"fmt"
 	"strconv"
 
 	"forum/internal/app"
@@ -21,28 +21,8 @@ type postForm struct {
 	app.Validator
 }
 
-func CreatePostPage(f *app.Application) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		// Fetch categories to display in the form
-		categories, err := f.Categories.ListAll()
-		if err != nil {
-			f.ErrorLog.Printf("Error fetching categories: %v", err)
-			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-			return
-		}
-
-		type PageData struct {
-			Categories []*models.Category
-			Form       *postForm
-		}
-
-		render(w, r, f, "create_post.html", &app.TemplateData{Form: &PageData{Categories: categories, Form: &postForm{}}})
-	}
-}
-
 func CreatePost(f *app.Application) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		// Form parsing knowledge
 		err := r.ParseMultipartForm(10 << 20)
 		if err != nil {
 			f.ErrorLog.Printf("Form parsing error: %v", err)
@@ -50,8 +30,6 @@ func CreatePost(f *app.Application) http.HandlerFunc {
 			return
 		}
 
-		// The context we created in midlleware (auth.go) bears the user,
-		// it's ID will be defined for use by the Author_id
 		currentUser, ok := r.Context().Value(middleware.ContextKeyUser).(*models.User)
 		if !ok {
 			http.Error(w, "Could not retrieve user from context", http.StatusInternalServerError)
@@ -59,14 +37,11 @@ func CreatePost(f *app.Application) http.HandlerFunc {
 		}
 
 		form := &postForm{
-			Title:   r.PostForm.Get("title"),
-			Content: r.PostForm.Get("content"),
-			// Realistically, Author_id isn't goten from the form, but from the authenticated user (sessions)
+			Title:     r.PostForm.Get("title"),
+			Content:   r.PostForm.Get("content"),
 			Author_id: currentUser.ID,
 		}
 
-		// Parse categories
-		// r.PostForm["categories"] should give a slice of strings if multiple checkboxes have name="categories"
 		catStrings := r.PostForm["categories"]
 		for _, catStr := range catStrings {
 			catID, err := strconv.Atoi(catStr)
@@ -84,25 +59,17 @@ func CreatePost(f *app.Application) http.HandlerFunc {
 		}
 
 		if !form.Valid() {
-			form.FieldErrors = form.Validator.FieldErrors
-
-			// Re-fetch categories for re-rendering
-			categories, _ := f.Categories.ListAll()
-			type PageData struct {
-				Categories []*models.Category
-				Form       *postForm
-			}
-
-			data := &app.TemplateData{Form: &PageData{Categories: categories, Form: form}}
-			render(w, r, f, "create_post.html", data)
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusBadRequest)
+			json.NewEncoder(w).Encode(map[string]any{
+				"error":  "Validation failed",
+				"fields": form.FieldErrors,
+			})
 			return
 		}
 
-		// Handle multiple file uploads (Attachments) - Optional, if you want to keep this logic separate from the main image
-		// For now, we are focusing on the main post image handled above.
-		// If you want to support additional attachments, keep the logic here.
 		var imageURL string
-		files := r.MultipartForm.File["attachments"] // Assuming input name is "attachments"
+		files := r.MultipartForm.File["attachments"]
 		if len(files) > 0 && files[0] != nil && files[0].Filename != "" {
 			file, err := files[0].Open()
 			if err != nil {
@@ -112,7 +79,7 @@ func CreatePost(f *app.Application) http.HandlerFunc {
 			}
 			defer file.Close()
 
-			filename, err := app.UploadImage(file, *files[0], "posts") // Save to a 'posts' subdirectory
+			filename, err := app.UploadImage(file, *files[0], "posts")
 			if err != nil {
 				f.ErrorLog.Printf("Error saving uploaded file: %v", err)
 				http.Error(w, "Internal Server Error", http.StatusInternalServerError)
@@ -132,17 +99,20 @@ func CreatePost(f *app.Application) http.HandlerFunc {
 		id, err := f.Posts.CreateNewPostDB(post)
 		if err != nil {
 			if errors.Is(err, models.ErrDuplicateRecord) {
-				// Handle duplicate record if necessary
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(http.StatusConflict)
+				json.NewEncoder(w).Encode(map[string]string{"error": "Duplicate post detected"})
+				return
 			}
-
 			f.ErrorLog.Printf("Post creation failed: %v", err)
 			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 			return
 		}
 
 		f.InfoLog.Printf("New post created with ID: %v", id)
-		http.Redirect(w, r, "/", http.StatusSeeOther)
-
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusCreated)
+		json.NewEncoder(w).Encode(map[string]any{"message": "Post created successfully", "post_id": id})
 	}
 }
 
@@ -154,7 +124,6 @@ func DeletePost(f *app.Application) http.HandlerFunc {
 			return
 		}
 
-		// Get the post author,, as the id would be needed to help moderator/admin rights for deleteing
 		post, err := f.Posts.Get(id)
 		if err != nil {
 			if errors.Is(err, models.ErrNoRecords) {
@@ -165,10 +134,7 @@ func DeletePost(f *app.Application) http.HandlerFunc {
 			return
 		}
 
-		// Get current user with our context
 		curentUser := r.Context().Value(middleware.ContextKeyUser).(*models.User)
-
-		// AUTHORIZATION CHECK
 		isModeratorOrAdmin := curentUser.Role == models.RoleModerator || curentUser.Role == models.RoleAdmin
 		isAuthor := curentUser.ID == post.AuthorID
 
@@ -178,7 +144,6 @@ func DeletePost(f *app.Application) http.HandlerFunc {
 			return
 		}
 
-		// If our code excutes up to this point, then the person trying too delete has been authenticated and authorized
 		err = f.Posts.DeletePostDB(id)
 		if err != nil {
 			if errors.Is(err, models.ErrNoRecords) {
@@ -191,73 +156,11 @@ func DeletePost(f *app.Application) http.HandlerFunc {
 		}
 
 		f.InfoLog.Printf("Deleted post #%d from database", id)
-		http.Redirect(w, r, "/", http.StatusSeeOther)
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]string{"message": "Post deleted successfully"})
 	}
 }
 
-func EditPostPage(f *app.Application) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		id, err := strconv.Atoi(r.PathValue("id"))
-		if err != nil {
-			http.Error(w, "Invalid post ID", http.StatusBadRequest)
-			return
-		}
-
-		post, err := f.Posts.Get(id)
-		if err != nil {
-			if errors.Is(err, models.ErrNoRecords) {
-				http.NotFound(w, r)
-			} else {
-				f.ErrorLog.Printf("Error fetching post #%d: %v", id, err)
-				http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-			}
-			return
-		}
-
-		// Get the currently logged-in user
-		currentUser := r.Context().Value(middleware.ContextKeyUser).(*models.User)
-		if currentUser.ID != post.AuthorID && currentUser.Role != models.RoleAdmin && currentUser.Role != models.RoleModerator {
-			http.Error(w, "Forbidden", http.StatusForbidden)
-			return
-		}
-
-		categories, err := f.Categories.ListAll()
-		if err != nil {
-			f.ErrorLog.Printf("Error fetching categories: %v", err)
-			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-			return
-		}
-
-		// Convert post categories to ID slice for the form
-		var categoryIDs []int
-		// post.Categories is []int based on previous edits to models/posts.go
-		categoryIDs = post.Categories
-
-		form := &postForm{
-			Title:        post.Title,
-			Content:      post.Content,
-			Category_ids: categoryIDs,
-		}
-
-		type PageData struct {
-			Categories []*models.Category
-			Form       *postForm
-			PostID     int
-		}
-
-		data := &app.TemplateData{
-			Form: &PageData{
-				Categories: categories,
-				Form:       form,
-				PostID:     post.ID,
-			},
-		}
-
-		render(w, r, f, "edit_post.html", data)
-	}
-}
-
-// WIP : Not sure if the route should handle the ID or if should be sent from the edit form
 func UpdatePost(f *app.Application) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id, err := strconv.Atoi(r.PathValue("id"))
@@ -273,10 +176,7 @@ func UpdatePost(f *app.Application) http.HandlerFunc {
 			return
 		}
 
-		// Get the currently logged-in user
 		currentUser := r.Context().Value(middleware.ContextKeyUser).(*models.User)
-
-		// AUTHORIZATION Check
 		isModeratorOrAdmin := currentUser.Role == models.RoleModerator || currentUser.Role == models.RoleAdmin
 		isAuthor := currentUser.ID == post.AuthorID
 
@@ -294,10 +194,9 @@ func UpdatePost(f *app.Application) http.HandlerFunc {
 		form := &postForm{
 			Title:     r.PostForm.Get("title"),
 			Content:   r.PostForm.Get("content"),
-			Author_id: post.AuthorID, // Keep original author
+			Author_id: post.AuthorID,
 		}
 
-		// Parse categories
 		catStrings := r.PostForm["categories"]
 		for _, catStr := range catStrings {
 			catID, err := strconv.Atoi(catStr)
@@ -315,24 +214,12 @@ func UpdatePost(f *app.Application) http.HandlerFunc {
 		}
 
 		if !form.Valid() {
-			form.FieldErrors = form.Validator.FieldErrors
-
-			// Re-fetch categories for re-rendering
-			categories, _ := f.Categories.ListAll()
-			type PageData struct {
-				Categories []*models.Category
-				Form       *postForm
-				PostID     int
-			}
-
-			data := &app.TemplateData{
-				Form: &PageData{
-					Categories: categories,
-					Form:       form,
-					PostID:     id,
-				},
-			}
-			render(w, r, f, "edit_post.html", data)
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusBadRequest)
+			json.NewEncoder(w).Encode(map[string]any{
+				"error":  "Validation failed",
+				"fields": form.FieldErrors,
+			})
 			return
 		}
 
@@ -350,7 +237,8 @@ func UpdatePost(f *app.Application) http.HandlerFunc {
 		}
 
 		f.InfoLog.Printf("Updated post #%d", id)
-		http.Redirect(w, r, fmt.Sprintf("/post/%d", id), http.StatusSeeOther)
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]string{"message": "Post updated successfully"})
 	}
 }
 
@@ -380,60 +268,10 @@ func GetPost(f *app.Application) http.HandlerFunc {
 			return
 		}
 
-		type PageData struct {
-			Post     *models.Post
-			Comments []*models.Comment
-		}
-
-		data := &app.TemplateData{
-			Form: &PageData{
-				Post:     post,
-				Comments: comments,
-			},
-		}
-
-		render(w, r, f, "post.html", data)
-	}
-}
-
-func CategoryPosts(f *app.Application) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		id, err := strconv.Atoi(r.PathValue("id"))
-		if err != nil {
-			http.Error(w, "Invalid category ID", http.StatusBadRequest)
-			return
-		}
-
-		// Fetch posts for this category
-		posts, err := f.Posts.ListByCategory(id, 100) // Limit 100 for now
-		if err != nil {
-			f.ErrorLog.Printf("Error fetching posts for category #%d: %v", id, err)
-			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-			return
-		}
-
-		// Fetch all categories for the sidebar
-		categories, err := f.Categories.ListAll()
-		if err != nil {
-			f.ErrorLog.Printf("Error fetching categories: %v", err)
-			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-			return
-		}
-
-		type PageData struct {
-			Posts      []*models.Post
-			Categories []*models.Category
-			CurrentCat int
-		}
-
-		data := &app.TemplateData{
-			Form: &PageData{
-				Posts:      posts,
-				Categories: categories,
-				CurrentCat: id,
-			},
-		}
-
-		render(w, r, f, "home.html", data)
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]any{
+			"post":     post,
+			"comments": comments,
+		})
 	}
 }

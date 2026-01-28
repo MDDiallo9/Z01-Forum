@@ -18,15 +18,6 @@ type Application struct {
 	Likes         *models.LikesModel
 	Comments      *models.CommentsModel
 	Sessions      *services.SessionManager
-	TemplateData  TemplateData
-}
-
-type TemplateData struct {
-	Form            any
-	Reports         []*models.Report
-	IsAuthenticated bool
-	CurrentUserID   string
-	IsAdmin         bool
 }
 
 func NewApplication(

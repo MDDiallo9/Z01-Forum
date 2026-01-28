@@ -1,17 +1,12 @@
 package handlers
 
 import (
+	"encoding/json"
 	"forum/internal/app"
 	"forum/internal/models"
 	"net/http"
 	"strconv"
 )
-
-func AdminDashboard(f *app.Application) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		render(w, r, f, "admin.html", nil)
-	}
-}
 
 func ListReports(f *app.Application) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -23,10 +18,8 @@ func ListReports(f *app.Application) http.HandlerFunc {
 			return
 		}
 
-		data := &app.TemplateData{
-			Reports: reports,
-		}
-		render(w, r, f, "admin_reports.html", data)
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(reports)
 	}
 }
 
@@ -57,7 +50,8 @@ func ResolveReport(f *app.Application) http.HandlerFunc {
 			return
 		}
 
-		http.Redirect(w, r, "/admin/reports", http.StatusSeeOther)
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]string{"message": "Report status updated", "status": status})
 	}
 }
 
@@ -76,8 +70,8 @@ func PromoteUser(f *app.Application) http.HandlerFunc {
 			return
 		}
 
-		// Redirect back to where they came from or a user list
-		http.Redirect(w, r, r.Header.Get("Referer"), http.StatusSeeOther)
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]string{"message": "User promoted successfully"})
 	}
 }
 
@@ -96,6 +90,7 @@ func DemoteUser(f *app.Application) http.HandlerFunc {
 			return
 		}
 
-		http.Redirect(w, r, r.Header.Get("Referer"), http.StatusSeeOther)
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]string{"message": "User demoted successfully"})
 	}
 }
